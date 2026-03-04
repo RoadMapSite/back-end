@@ -44,4 +44,9 @@ public class PhoneVerification {
 
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
+
+    public void completeVerification(String token) {
+        this.verificationToken = token;
+        this.isVerified = true;
+    }
 }
