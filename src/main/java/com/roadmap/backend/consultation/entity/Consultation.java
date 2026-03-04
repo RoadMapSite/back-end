@@ -2,6 +2,8 @@ package com.roadmap.backend.consultation.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -27,8 +29,9 @@ public class Consultation {
     @Column(name = "consultation_id")
     private Long consultationId;
 
-    @Column(nullable = false, length = 50)
-    private String branch;
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private Branch branch;
 
     @Column(name = "consultation_date", nullable = false)
     private LocalDate consultationDate;
