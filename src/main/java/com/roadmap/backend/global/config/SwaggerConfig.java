@@ -3,7 +3,6 @@ package com.roadmap.backend.global.config;
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;
-import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.security.SecurityScheme;
 import io.swagger.v3.oas.models.servers.Server;
 import java.util.List;
@@ -29,8 +28,7 @@ public class SwaggerConfig {
                                         .type(SecurityScheme.Type.HTTP)
                                         .scheme("bearer")
                                         .bearerFormat("JWT")
-                                        .description("인증 토큰을 입력하세요")))
-                .addSecurityItem(new SecurityRequirement().addList(SECURITY_SCHEME_NAME));
+                                        .description("휴대폰 인증 후 발급받은 verificationToken을 입력하세요")));
     }
 
     private List<Server> createServerList() {
