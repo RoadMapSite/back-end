@@ -14,15 +14,15 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class ConsultationRequest {
 
-    @NotNull(message = "지점은 필수이며, N 또는 HI_END만 입력 가능합니다.")
-    @Schema(description = "지점 구분. N(일반) 또는 HI_END(Hi-end) 중 하나만 입력 가능", example = "N", allowableValues = {"N", "HI_END"})
+    @NotNull(message = "지점은 필수이며, N 또는 Hi-end만 입력 가능합니다.")
+    @Schema(description = "지점 구분. N(일반) 또는 Hi-end 중 하나만 입력 가능", example = "N", allowableValues = {"N", "Hi-end"})
     private Branch branch;
 
     @NotNull(message = "상담 날짜는 필수입니다.")
     private LocalDate date;
 
-    @NotBlank(message = "상담 시간은 필수이며, 30분 단위(예: 18:00, 18:30)만 입력 가능합니다.")
-    @Schema(description = "상담 시간. 30분 단위만 가능 (예: 09:00, 09:30, 18:00)", example = "18:00")
+    @NotBlank(message = "상담 시간은 필수이며, 영업시간 10:00~17:30 내 30분 단위만 입력 가능합니다.")
+    @Schema(description = "상담 시간. 영업시간 10:00~17:30 내 30분 단위 (예: 10:00, 10:30, 17:30)", example = "10:00")
     private String time;
 
     @NotBlank(message = "학생 이름은 필수입니다.")
