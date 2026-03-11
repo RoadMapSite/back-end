@@ -35,8 +35,11 @@ public class ConsultationController {
                     상담 예약을 확정합니다. 우측 상단 Authorize에서 인증 토큰을 등록해주세요.
                     
                     **입력 규칙**
-                    - **branch**: N 또는 HI_END(Hi-end) 둘 중 하나만 입력 가능
-                    - **time**: 30분 단위만 입력 가능 (예: 09:00, 09:30, 18:00, 18:30)
+                    - **branch**: N 또는 Hi-end 둘 중 하나만 입력 가능
+                    - **time**: 영업시간 10:00~17:30 범위 내 30분 단위만 입력 가능 (예: 10:00, 10:30, 17:30)
+                    
+                    **유효성 검사**
+                    - 과거 날짜/시간 차단, 영업시간 이탈 차단, 30분 단위 검증, 중복 예약 차단
                     """,
             security = @SecurityRequirement(name = "bearerAuth")
     )
