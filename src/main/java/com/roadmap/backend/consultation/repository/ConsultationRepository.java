@@ -11,6 +11,9 @@ public interface ConsultationRepository extends JpaRepository<Consultation, Long
     List<Consultation> findByBranchAndConsultationDateBetween(
             Branch branch, LocalDate startDate, LocalDate endDate);
 
+    List<Consultation> findByBranchAndConsultationDateBetweenOrderByConsultationDateAscConsultationTimeAsc(
+            Branch branch, LocalDate startDate, LocalDate endDate);
+
     boolean existsByBranchAndConsultationDateAndConsultationTime(
             Branch branch,
             LocalDate consultationDate,

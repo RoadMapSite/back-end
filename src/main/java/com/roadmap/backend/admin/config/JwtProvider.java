@@ -13,8 +13,8 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class JwtProvider {
 
-    private static final String CLAIM_USERNAME = "username";
-    private static final String CLAIM_ROLE = "role";
+    public static final String CLAIM_USERNAME = "username";
+    public static final String CLAIM_ROLE = "role";
 
     private final JwtProperties jwtProperties;
 
