@@ -1,3 +1,8 @@
+app:
+  jwt:
+    secret: ${JWT_SECRET:roadmap-admin-jwt-secret-key-min-256bits-for-hs256-algorithm}
+    expiration-ms: ${JWT_EXPIRATION_MS:86400000}
+
 spring:
   profiles:
     active: local
