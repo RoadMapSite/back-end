@@ -71,4 +71,9 @@ public class Review {
         this.isTop = isTop;
         this.updatedAt = updatedAt;
     }
+
+    public void updateStatus(String status, LocalDateTime updatedAt) {
+        this.status = status;
+        this.updatedAt = updatedAt;
+    }
 }

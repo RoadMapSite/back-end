@@ -1,6 +1,8 @@
 package com.roadmap.backend.admin.service;
 
 import com.roadmap.backend.admin.config.JwtProvider;
+import com.roadmap.backend.admin.dto.ReviewStatusUpdateRequest;
+import com.roadmap.backend.admin.dto.ReviewStatusUpdateResponse;
 import com.roadmap.backend.admin.dto.ReviewTopUpdateRequest;
 import com.roadmap.backend.admin.dto.ReviewTopUpdateResponse;
 import com.roadmap.backend.admin.exception.AdminAuthException;
@@ -38,6 +40,22 @@ public class AdminReviewService {
         return ReviewTopUpdateResponse.builder()
                 .success(true)
                 .message("우수 후기 설정이 변경되었습니다.")
+                .build();
+    }
+
+    @Transactional
+    public ReviewStatusUpdateResponse updateReviewStatus(String token, Long reviewId, ReviewStatusUpdateRequest request) {
+        validateAdminToken(token);
+
+        Review review = reviewRepository.findById(reviewId)
+                .orElseThrow(() -> new AdminAuthException("후기를 찾을 수 없습니다.", HttpStatus.NOT_FOUND));
+
+        LocalDateTime now = LocalDateTime.now();
+        review.updateStatus(request.getStatus(), now);
+
+        return ReviewStatusUpdateResponse.builder()
+                .success(true)
+                .message("후기 승인 상태가 변경되었습니다.")
                 .build();
     }
 

@@ -1,5 +1,7 @@
 package com.roadmap.backend.admin.controller;
 
+import com.roadmap.backend.admin.dto.ReviewStatusUpdateRequest;
+import com.roadmap.backend.admin.dto.ReviewStatusUpdateResponse;
 import com.roadmap.backend.admin.dto.ReviewTopUpdateRequest;
 import com.roadmap.backend.admin.dto.ReviewTopUpdateResponse;
 import com.roadmap.backend.admin.exception.AdminAuthException;
@@ -48,6 +50,26 @@ public class AdminReviewController {
         String token = extractToken(authHeader);
         requireToken(token);
         ReviewTopUpdateResponse response = adminReviewService.updateReviewTop(token, reviewId, request);
+        return ResponseEntity.ok(response);
+    }
+
+    @PatchMapping("/{reviewId}/status")
+    @Operation(
+            summary = "후기 승인 여부 결정",
+            description = "관리자 전용. 특정 후기의 승인 상태를 변경합니다. (PENDING: 대기, APPROVED: 승인)",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    public ResponseEntity<ReviewStatusUpdateResponse> updateReviewStatus(
+            @Parameter(hidden = true)
+            @RequestHeader(value = "Authorization", required = false) String authHeader,
+            @Parameter(name = "reviewId", in = ParameterIn.PATH, required = true, description = "후기 ID",
+                    schema = @Schema(type = "integer", example = "1"))
+            @PathVariable("reviewId") Long reviewId,
+            @Valid @RequestBody ReviewStatusUpdateRequest request) {
+
+        String token = extractToken(authHeader);
+        requireToken(token);
+        ReviewStatusUpdateResponse response = adminReviewService.updateReviewStatus(token, reviewId, request);
         return ResponseEntity.ok(response);
     }
 
