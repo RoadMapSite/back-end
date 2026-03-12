@@ -66,4 +66,14 @@ public class Review {
     @OneToMany(mappedBy = "review", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<ReviewImage> images = new ArrayList<>();
+
+    public void updateIsTop(Boolean isTop, LocalDateTime updatedAt) {
+        this.isTop = isTop;
+        this.updatedAt = updatedAt;
+    }
+
+    public void updateStatus(String status, LocalDateTime updatedAt) {
+        this.status = status;
+        this.updatedAt = updatedAt;
+    }
 }
