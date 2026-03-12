@@ -56,7 +56,7 @@ public class AdminConsultationService {
 
     private void validateAdminToken(String token) {
         if (token == null || token.isBlank()) {
-            throw new AdminAuthException("인증 토큰이 필요합니다.", HttpStatus.UNAUTHORIZED);
+            throw new AdminAuthException("토큰이 없습니다.", HttpStatus.UNAUTHORIZED);
         }
         try {
             Claims claims = jwtProvider.parseToken(token);
