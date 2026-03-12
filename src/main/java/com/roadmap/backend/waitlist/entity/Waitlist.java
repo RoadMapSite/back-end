@@ -50,4 +50,9 @@ public class Waitlist {
 
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
+
+    public void updateStatus(String status, LocalDateTime updatedAt) {
+        this.status = status;
+        this.updatedAt = updatedAt;
+    }
 }

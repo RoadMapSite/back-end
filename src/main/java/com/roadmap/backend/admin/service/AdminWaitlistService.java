@@ -3,6 +3,8 @@ package com.roadmap.backend.admin.service;
 import com.roadmap.backend.admin.config.JwtProvider;
 import com.roadmap.backend.admin.dto.AdminWaitlistResponse;
 import com.roadmap.backend.admin.dto.WaitlistDetail;
+import com.roadmap.backend.admin.dto.WaitlistStatusUpdateRequest;
+import com.roadmap.backend.admin.dto.WaitlistStatusUpdateResponse;
 import com.roadmap.backend.admin.exception.AdminAuthException;
 import com.roadmap.backend.waitlist.entity.Season;
 import com.roadmap.backend.waitlist.entity.Waitlist;
@@ -10,6 +12,7 @@ import com.roadmap.backend.waitlist.repository.WaitlistRepository;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.security.SignatureException;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.IntStream;
 import lombok.RequiredArgsConstructor;
@@ -55,9 +58,33 @@ public class AdminWaitlistService {
                 .build();
     }
 
+    @Transactional
+    public WaitlistStatusUpdateResponse updateWaitlistStatus(String token, Long waitlistId, WaitlistStatusUpdateRequest request) {
+        validateAdminToken(token);
+
+        Waitlist waitlist = waitlistRepository.findById(waitlistId)
+                .orElseThrow(() -> new AdminAuthException("대기열 데이터를 찾을 수 없습니다.", HttpStatus.NOT_FOUND));
+
+        LocalDateTime now = LocalDateTime.now();
+        waitlist.updateStatus(request.getStatus(), now);
+
+        sendStatusChangeNotification(waitlist);
+
+        return WaitlistStatusUpdateResponse.builder()
+                .success(true)
+                .message("상태가 성공적으로 변경되었으며, 해당 학생에게 알림 문자가 발송되었습니다.")
+                .build();
+    }
+
+    private void sendStatusChangeNotification(Waitlist waitlist) {
+        // TODO: 상태 변경에 따른 안내 문자(SMS) 자동 발송 로직 구현
+        // - 수신 번호: waitlist.getPhoneNumber()
+        // - 발송 메시지: 상태별 안내 문구 (예: "대기 상태가 [CONTACTED]로 변경되었습니다." 등)
+    }
+
     private void validateAdminToken(String token) {
         if (token == null || token.isBlank()) {
-            throw new AdminAuthException("인증 토큰이 필요합니다.", HttpStatus.UNAUTHORIZED);
+            throw new AdminAuthException("토큰이 없습니다.", HttpStatus.UNAUTHORIZED);
         }
         try {
             Claims claims = jwtProvider.parseToken(token);

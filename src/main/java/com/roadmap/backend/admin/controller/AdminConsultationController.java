@@ -50,11 +50,18 @@ public class AdminConsultationController {
             @RequestParam(name = "endDate", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
 
         String token = extractToken(authHeader);
+        requireToken(token);
         validateRequiredParams(branch, startDate, endDate);
 
         AdminConsultationListResponse response = adminConsultationService.getConsultationList(
                 token, branch, startDate, endDate);
         return ResponseEntity.ok(response);
+    }
+
+    private void requireToken(String token) {
+        if (token == null || token.isBlank()) {
+            throw new AdminAuthException("토큰이 없습니다.", HttpStatus.UNAUTHORIZED);
+        }
     }
 
     private String extractToken(String authHeader) {
