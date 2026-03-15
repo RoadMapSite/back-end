@@ -37,4 +37,8 @@ public class ReviewImage {
 
     @Column(name = "sort_order", nullable = false)
     private Integer sortOrder;
+
+    public void assignReview(Review review) {
+        this.review = review;
+    }
 }

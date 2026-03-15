@@ -67,6 +67,11 @@ public class Review {
     @Builder.Default
     private List<ReviewImage> images = new ArrayList<>();
 
+    public void addImage(ReviewImage image) {
+        images.add(image);
+        image.assignReview(this);
+    }
+
     public void updateIsTop(Boolean isTop, LocalDateTime updatedAt) {
         this.isTop = isTop;
         this.updatedAt = updatedAt;
