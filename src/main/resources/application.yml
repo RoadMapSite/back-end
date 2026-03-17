@@ -5,9 +5,7 @@ app:
 
 spring:
   profiles:
-    active: local
-  config:
-    import: optional:file:.env[.properties]
+    active: ${SPRING_PROFILES_ACTIVE:local} 
   application:
     name: backend
   jpa:
