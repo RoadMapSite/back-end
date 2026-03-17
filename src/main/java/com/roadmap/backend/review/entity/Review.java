@@ -36,7 +36,7 @@ public class Review {
     @Column(nullable = false, length = 255)
     private String title;
 
-    @Column(nullable = false, columnDefinition = "TEXT")
+    @Column(nullable = false, length = 5000)
     private String content;
 
     @Column(name = "author_name", nullable = false, length = 100)
