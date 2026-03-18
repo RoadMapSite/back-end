@@ -30,9 +30,6 @@ public class Review {
     @Column(name = "review_id")
     private Long reviewId;
 
-    @Column(nullable = false, length = 50)
-    private String branch;
-
     @Column(nullable = false, length = 255)
     private String title;
 

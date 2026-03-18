@@ -30,11 +30,9 @@ public class ReviewCommonController {
     )
     public ResponseEntity<ReviewsResponse> getReviews(
             @Parameter(description = "페이지 번호", required = true)
-            @RequestParam(defaultValue = "1") Integer page,
-            @Parameter(description = "관", required = false)
-            @RequestParam String branch
+            @RequestParam(defaultValue = "1") Integer page
     ) {
-        ReviewsResponse response = reviewService.getReviews(page, branch);
+        ReviewsResponse response = reviewService.getReviews(page);
         return ResponseEntity.ok(response);
     }
 

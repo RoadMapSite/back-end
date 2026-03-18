@@ -19,9 +19,6 @@ public class ReviewResponse {
     @Schema(description = "후기 ID")
     private Long reviewId;
 
-    @Schema(description = "지점")
-    private String branch;
-
     @Schema(description = "제목")
     private String title;
 

@@ -18,9 +18,6 @@ public class MyReviewItem {
     @Schema(description = "후기 ID", example = "105")
     private Long reviewId;
 
-    @Schema(description = "지점", example = "N")
-    private String branch;
-
     @Schema(description = "제목")
     private String title;
 

@@ -30,7 +30,7 @@ public class ReviewService {
     private final PhoneVerificationRepository phoneVerificationRepository;
 
     @Transactional
-    public ReviewsResponse getReviews(Integer page, String branch) {
+    public ReviewsResponse getReviews(Integer page) {
         int pageNumber = (page == null || page < 1) ? 0 : page - 1;
 
         // 한 페이지에 가져올 후기 개수
@@ -38,28 +38,11 @@ public class ReviewService {
 
         Pageable pageable = PageRequest.of(pageNumber, pageSize, Sort.by(Sort.Direction.DESC, "createdAt"));
 
-        List<Review> topReviews;
-        Page<Review> reviewPage;
+        List<Review> topReviews = reviewRepository
+                .findByStatusAndIsTopTrueOrderByCreatedAtDesc("APPROVED");
 
-        // branch 조건 분기
-        if (branch == null || branch.isBlank()) {
-
-            // 전체 조회
-            topReviews = reviewRepository
-                    .findByStatusAndIsTopTrueOrderByCreatedAtDesc("APPROVED");
-
-            reviewPage = reviewRepository
-                    .findByStatus("APPROVED", pageable);
-
-        } else {
-
-            // branch 조건 조회
-            topReviews = reviewRepository
-                    .findByStatusAndIsTopTrueAndBranchOrderByCreatedAtDesc("APPROVED", branch);
-
-            reviewPage = reviewRepository
-                    .findByStatusAndBranch("APPROVED", branch, pageable);
-        }
+        Page<Review> reviewPage = reviewRepository
+                .findByStatus("APPROVED", pageable);
 
         // DTO 변환
         List<ReviewSummary> topDtos = topReviews.stream()
@@ -98,7 +81,6 @@ public class ReviewService {
 
         return ReviewResponse.builder()
                 .reviewId(review.getReviewId())
-                .branch(review.getBranch())
                 .title(review.getTitle())
                 .content(review.getContent())
                 .authorName(review.getAuthorName())
@@ -116,7 +98,6 @@ public class ReviewService {
         // DB 저장
         LocalDateTime now = LocalDateTime.now();
         Review review = Review.builder()
-                .branch(request.getBranch())
                 .title(request.getTitle())
                 .content(request.getContent())
                 .authorName(request.getName())
@@ -136,9 +117,6 @@ public class ReviewService {
         }
 
         Review saved = reviewRepository.save(review);
-
-        // 후기 등록 완료 SMS 발송
-        sendReviewCompletionSms(saved);
 
         return ReviewRegisterResponse.builder()
                 .success(true)
@@ -209,21 +187,9 @@ public class ReviewService {
         return verification;
     }
 
-    /**
-     * 후기 등록 완료 SMS 발송.
-     * 실제 SMS API 연동은 TODO로 남겨둠.
-     */
-    private void sendReviewCompletionSms(Review review) {
-        // TODO: SMS 발송 API 연동 (예: 알리고, NHN Cloud 등)
-        // - 수신 번호: review.getPhoneNumber()
-        // - 발송 메시지: "후기 등록이 완료되었습니다." 등
-        // - 발송 실패 시 재시도 또는 로깅 처리
-    }
-
     private ReviewSummary toReviewSummary(Review review) {
         return ReviewSummary.builder()
                 .reviewId(review.getReviewId())
-                .branch(review.getBranch())
                 .title(review.getTitle())
                 .authorName(maskName(review.getAuthorName()))
                 .viewCount(review.getViewCount())
@@ -235,7 +201,6 @@ public class ReviewService {
     private MyReviewItem toMyReviewItem(Review review) {
         return MyReviewItem.builder()
                 .reviewId(review.getReviewId())
-                .branch(review.getBranch())
                 .title(review.getTitle())
                 .authorName(maskName(review.getAuthorName()))
                 .createdAt(review.getCreatedAt())
