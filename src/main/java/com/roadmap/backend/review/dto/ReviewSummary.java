@@ -18,9 +18,6 @@ public class ReviewSummary {
     @Schema(description = "후기 ID", example = "102")
     private Long reviewId;
 
-    @Schema(description = "지점 코드", example = "N")
-    private String branch;
-
     @Schema(description = "후기 제목", example = "시설이 정말 쾌적하고 집중이 잘 됩니다!")
     private String title;
 

@@ -12,7 +12,5 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
     Review findByReviewId(Long reviewId);
     List<Review> findByAuthorPhoneNumber(String authorPhoneNumber);
     List<Review> findByStatusAndIsTopTrueOrderByCreatedAtDesc(String status);
-    List<Review> findByStatusAndIsTopTrueAndBranchOrderByCreatedAtDesc(String status, String branch);
     Page<Review> findByStatus(String status, Pageable pageable);
-    Page<Review> findByStatusAndBranch(String status, String branch, Pageable pageable);
 }
