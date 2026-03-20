@@ -10,6 +10,7 @@ import com.roadmap.backend.consultation.dto.ScheduleResponse;
 import com.roadmap.backend.consultation.dto.UnavailableScheduleItem;
 import com.roadmap.backend.consultation.entity.Branch;
 import com.roadmap.backend.consultation.entity.Consultation;
+import com.roadmap.backend.sms.service.SmsService;
 import com.roadmap.backend.consultation.exception.ConsultationException;
 import com.roadmap.backend.consultation.repository.ConsultationRepository;
 import java.time.LocalDate;
@@ -26,6 +27,8 @@ import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 @Service
 @RequiredArgsConstructor
@@ -37,6 +40,7 @@ public class ConsultationService {
 
     private final ConsultationRepository consultationRepository;
     private final PhoneVerificationRepository phoneVerificationRepository;
+    private final SmsService smsService;
 
     @Transactional
     public ConsultationResponse registerConsultation(ConsultationRequest request, String token) {
@@ -92,6 +96,14 @@ public class ConsultationService {
                 .build();
 
         Consultation saved = consultationRepository.save(consultation);
+
+        String phoneForSms = request.getPhoneNumber();
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                smsService.send(phoneForSms, "test");
+            }
+        });
 
         return ConsultationResponse.builder()
                 .success(true)

@@ -6,6 +6,7 @@ import com.roadmap.backend.admin.dto.WaitlistDetail;
 import com.roadmap.backend.admin.dto.WaitlistStatusUpdateRequest;
 import com.roadmap.backend.admin.dto.WaitlistStatusUpdateResponse;
 import com.roadmap.backend.admin.exception.AdminAuthException;
+import com.roadmap.backend.sms.service.SmsService;
 import com.roadmap.backend.waitlist.entity.Season;
 import com.roadmap.backend.waitlist.entity.Waitlist;
 import com.roadmap.backend.waitlist.repository.WaitlistRepository;
@@ -19,6 +20,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 @Service
 @RequiredArgsConstructor
@@ -29,6 +32,7 @@ public class AdminWaitlistService {
 
     private final WaitlistRepository waitlistRepository;
     private final JwtProvider jwtProvider;
+    private final SmsService smsService;
 
     public AdminWaitlistResponse getWaitlistList(String token, String seasonParam, String branchParam) {
         validateAdminToken(token);
@@ -68,18 +72,18 @@ public class AdminWaitlistService {
         LocalDateTime now = LocalDateTime.now();
         waitlist.updateStatus(request.getStatus(), now);
 
-        sendStatusChangeNotification(waitlist);
+        String phoneForSms = waitlist.getPhoneNumber();
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                smsService.send(phoneForSms, "test");
+            }
+        });
 
         return WaitlistStatusUpdateResponse.builder()
                 .success(true)
                 .message("상태가 성공적으로 변경되었으며, 해당 학생에게 알림 문자가 발송되었습니다.")
                 .build();
-    }
-
-    private void sendStatusChangeNotification(Waitlist waitlist) {
-        // TODO: 상태 변경에 따른 안내 문자(SMS) 자동 발송 로직 구현
-        // - 수신 번호: waitlist.getPhoneNumber()
-        // - 발송 메시지: 상태별 안내 문구 (예: "대기 상태가 [CONTACTED]로 변경되었습니다." 등)
     }
 
     private void validateAdminToken(String token) {
