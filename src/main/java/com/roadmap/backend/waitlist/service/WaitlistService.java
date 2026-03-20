@@ -7,6 +7,8 @@ import com.roadmap.backend.waitlist.dto.WaitlistRegisterResponse;
 import com.roadmap.backend.waitlist.entity.Season;
 import com.roadmap.backend.waitlist.entity.Waitlist;
 import com.roadmap.backend.waitlist.exception.WaitlistException;
+import com.roadmap.backend.sms.service.SmsService;
+import com.roadmap.backend.sms.util.SmsMessageUtil;
 import com.roadmap.backend.waitlist.repository.WaitlistRepository;
 import java.time.LocalDateTime;
 import java.util.Optional;
@@ -14,6 +16,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 @Service
 @RequiredArgsConstructor
@@ -22,6 +26,7 @@ public class WaitlistService {
 
     private final WaitlistRepository waitlistRepository;
     private final PhoneVerificationRepository phoneVerificationRepository;
+    private final SmsService smsService;
 
     @Transactional
     public WaitlistRegisterResponse registerWaitlist(WaitlistRegisterRequest request, String token) {
@@ -52,8 +57,14 @@ public class WaitlistService {
 
         Waitlist saved = waitlistRepository.save(waitlist);
 
-        // 대기 등록 완료 SMS 발송
-        sendWaitlistCompletionSms(saved);
+        String phoneForSms = saved.getPhoneNumber();
+        String smsMessage = buildWaitlistRegisterSmsMessage(saved);
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                smsService.send(phoneForSms, smsMessage);
+            }
+        });
 
         return WaitlistRegisterResponse.builder()
                 .success(true)
@@ -61,6 +72,21 @@ public class WaitlistService {
                 .waitlistId(saved.getWaitlistId())
                 .registeredAt(saved.getRegisteredAt())
                 .build();
+    }
+
+    /**
+     * 등록 대기 완료 SMS 메시지 생성.
+     */
+    private String buildWaitlistRegisterSmsMessage(Waitlist waitlist) {
+        String seasonAndBranch = SmsMessageUtil.formatSeasonAndBranch(waitlist.getSeason(), waitlist.getBranch());
+        return String.format(
+                "[로드맵 독서실]\n"
+                        + "%s 학생의 %s 등록 대기가 완료되었습니다.\n"
+                        + "추후 좌석 발생 시 다시 연락드리겠습니다.\n"
+                        + "감사합니다.",
+                waitlist.getStudentName(),
+                seasonAndBranch
+        );
     }
 
     /**
@@ -119,14 +145,4 @@ public class WaitlistService {
         return null;
     }
 
-    /**
-     * 대기 등록 완료 SMS 발송.
-     * 실제 SMS API 연동은 TODO로 남겨둠.
-     */
-    private void sendWaitlistCompletionSms(Waitlist waitlist) {
-        // TODO: SMS 발송 API 연동 (예: 알리고, NHN Cloud 등)
-        // - 수신 번호: waitlist.getPhoneNumber()
-        // - 발송 메시지: "대기 등록이 완료되었습니다. 시즌: {season}, 순번 안내는 별도 연락드리겠습니다." 등
-        // - 발송 실패 시 재시도 또는 로깅 처리
-    }
 }
