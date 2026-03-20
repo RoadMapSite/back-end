@@ -11,6 +11,7 @@ import com.roadmap.backend.consultation.dto.UnavailableScheduleItem;
 import com.roadmap.backend.consultation.entity.Branch;
 import com.roadmap.backend.consultation.entity.Consultation;
 import com.roadmap.backend.sms.service.SmsService;
+import com.roadmap.backend.sms.util.SmsMessageUtil;
 import com.roadmap.backend.consultation.exception.ConsultationException;
 import com.roadmap.backend.consultation.repository.ConsultationRepository;
 import java.time.LocalDate;
@@ -98,10 +99,11 @@ public class ConsultationService {
         Consultation saved = consultationRepository.save(consultation);
 
         String phoneForSms = request.getPhoneNumber();
+        String smsMessage = buildConsultationSmsMessage(request);
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
             @Override
             public void afterCommit() {
-                smsService.send(phoneForSms, "test");
+                smsService.send(phoneForSms, smsMessage);
             }
         });
 
@@ -111,6 +113,25 @@ public class ConsultationService {
                 .consultationId(saved.getConsultationId())
                 .registeredAt(saved.getRegisteredAt())
                 .build();
+    }
+
+    /**
+     * 상담 신청 완료 SMS 메시지 생성.
+     */
+    private String buildConsultationSmsMessage(ConsultationRequest request) {
+        String branchDisplay = SmsMessageUtil.formatBranchName(request.getBranch());
+        String dateStr = request.getDate().format(DateTimeFormatter.ISO_LOCAL_DATE);
+        return String.format(
+                "[로드맵 독서실]\n"
+                        + "%s 학생의 상담 신청이 완료되었습니다.\n"
+                        + "예약 일정: %s %s\n"
+                        + "위치: 로드맵 %s\n"
+                        + "감사합니다.",
+                request.getName(),
+                dateStr,
+                request.getTime(),
+                branchDisplay
+        );
     }
 
     /**

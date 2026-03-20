@@ -6,7 +6,9 @@ import com.roadmap.backend.admin.dto.WaitlistDetail;
 import com.roadmap.backend.admin.dto.WaitlistStatusUpdateRequest;
 import com.roadmap.backend.admin.dto.WaitlistStatusUpdateResponse;
 import com.roadmap.backend.admin.exception.AdminAuthException;
+import com.roadmap.backend.admin.sms.WaitlistStatusSmsTemplate;
 import com.roadmap.backend.sms.service.SmsService;
+import com.roadmap.backend.sms.util.SmsMessageUtil;
 import com.roadmap.backend.waitlist.entity.Season;
 import com.roadmap.backend.waitlist.entity.Waitlist;
 import com.roadmap.backend.waitlist.repository.WaitlistRepository;
@@ -72,17 +74,25 @@ public class AdminWaitlistService {
         LocalDateTime now = LocalDateTime.now();
         waitlist.updateStatus(request.getStatus(), now);
 
-        String phoneForSms = waitlist.getPhoneNumber();
-        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-            @Override
-            public void afterCommit() {
-                smsService.send(phoneForSms, "test");
-            }
-        });
+        WaitlistStatusSmsTemplate smsTemplate = WaitlistStatusSmsTemplate.fromStatus(request.getStatus());
+        if (smsTemplate != null) {
+            String phoneForSms = waitlist.getPhoneNumber();
+            String seasonAndBranch = SmsMessageUtil.formatSeasonAndBranch(waitlist.getSeason(), waitlist.getBranch());
+            String smsMessage = smsTemplate.format(waitlist.getStudentName(), seasonAndBranch);
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    smsService.send(phoneForSms, smsMessage);
+                }
+            });
+        }
 
+        String responseMessage = smsTemplate != null
+                ? "상태가 성공적으로 변경되었으며, 해당 학생에게 알림 문자가 발송되었습니다."
+                : "상태가 성공적으로 변경되었습니다.";
         return WaitlistStatusUpdateResponse.builder()
                 .success(true)
-                .message("상태가 성공적으로 변경되었으며, 해당 학생에게 알림 문자가 발송되었습니다.")
+                .message(responseMessage)
                 .build();
     }
 

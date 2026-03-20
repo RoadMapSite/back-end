@@ -8,6 +8,7 @@ import com.roadmap.backend.waitlist.entity.Season;
 import com.roadmap.backend.waitlist.entity.Waitlist;
 import com.roadmap.backend.waitlist.exception.WaitlistException;
 import com.roadmap.backend.sms.service.SmsService;
+import com.roadmap.backend.sms.util.SmsMessageUtil;
 import com.roadmap.backend.waitlist.repository.WaitlistRepository;
 import java.time.LocalDateTime;
 import java.util.Optional;
@@ -57,10 +58,11 @@ public class WaitlistService {
         Waitlist saved = waitlistRepository.save(waitlist);
 
         String phoneForSms = saved.getPhoneNumber();
+        String smsMessage = buildWaitlistRegisterSmsMessage(saved);
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
             @Override
             public void afterCommit() {
-                smsService.send(phoneForSms, "test");
+                smsService.send(phoneForSms, smsMessage);
             }
         });
 
@@ -70,6 +72,21 @@ public class WaitlistService {
                 .waitlistId(saved.getWaitlistId())
                 .registeredAt(saved.getRegisteredAt())
                 .build();
+    }
+
+    /**
+     * 등록 대기 완료 SMS 메시지 생성.
+     */
+    private String buildWaitlistRegisterSmsMessage(Waitlist waitlist) {
+        String seasonAndBranch = SmsMessageUtil.formatSeasonAndBranch(waitlist.getSeason(), waitlist.getBranch());
+        return String.format(
+                "[로드맵 독서실]\n"
+                        + "%s 학생의 %s 등록 대기가 완료되었습니다.\n"
+                        + "추후 좌석 발생 시 다시 연락드리겠습니다.\n"
+                        + "감사합니다.",
+                waitlist.getStudentName(),
+                seasonAndBranch
+        );
     }
 
     /**

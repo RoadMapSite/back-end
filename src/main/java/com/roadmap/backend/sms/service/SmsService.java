@@ -42,6 +42,7 @@ public class SmsService {
             message.setFrom(senderNumber);
             message.setTo(normalizedTo);
             message.setText(text);
+            message.setSubject("[로드맵 독서실]");
             messageService.send(message);
             log.info("SMS 발송 완료: to={}", normalizedTo);
         } catch (Exception e) {
