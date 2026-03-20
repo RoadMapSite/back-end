@@ -1,9 +1,16 @@
+solapi:
+  api-key: ${SOLAPI_API_KEY}
+  api-secret: ${SOLAPI_API_SECRET}
+  sender-number: ${SOLAPI_SENDER_NUMBER}
+
 app:
   jwt:
     secret: ${JWT_SECRET:roadmap-admin-jwt-secret-key-min-256bits-for-hs256-algorithm}
     expiration-ms: ${JWT_EXPIRATION_MS:86400000}
 
 spring:
+  config:
+    import: optional:file:.env[.properties]
   profiles:
     active: ${SPRING_PROFILES_ACTIVE:local} 
   application:
