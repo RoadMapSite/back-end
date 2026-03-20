@@ -87,7 +87,7 @@ public class AuthService {
         Message message = new Message();
         message.setFrom(senderNumber);
         message.setTo(to);
-        message.setText("[로드맵 독서실] 인증번호는 " + authCode + " 입니다. 3분 내에 입력해 주세요.");
+        message.setText("[로드맵 독서실]\n인증번호는 " + authCode + " 입니다.\n3분 내로 입력해 주세요!");
         messageService.send(message);
     }
 
