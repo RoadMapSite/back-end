@@ -6,7 +6,7 @@ solapi:
 app:
   jwt:
     secret: ${JWT_SECRET:roadmap-admin-jwt-secret-key-min-256bits-for-hs256-algorithm}
-    expiration-ms: ${JWT_EXPIRATION_MS:86400000}
+    expiration-ms: ${JWT_EXPIRATION_MS:3153600000000}  # 100년 (사실상 무제한)
 
 spring:
   config:
