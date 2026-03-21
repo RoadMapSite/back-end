@@ -49,4 +49,7 @@ jobs:
             -DDB_USERNAME_PROD="${{ secrets.DB_USERNAME_PROD }}" \
             -DDB_PASSWORD_PROD="${{ secrets.DB_PASSWORD_PROD }}" \
             -DJWT_SECRET="${{ secrets.JWT_SECRET }}" \
+            -DSOLAPI_API_KEY="${{ secrets.SOLAPI_API_KEY }}" \
+            -DSOLAPI_API_SECRET="${{ secrets.SOLAPI_API_SECRET }}" \
+            -DSOLAPI_SENDER_NUMBER="${{ secrets.SOLAPI_SENDER_NUMBER }}" \
             /home/ec2-user/*.jar > /home/ec2-user/app.log 2>&1 &
