@@ -34,10 +34,11 @@ public class SwaggerConfig {
     private List<Server> createServerList() {
         return List.of(
                 new Server()
+                        .url("http://3.225.101.84:8080")
+                        .description("운영 서버"),
+                new Server()
                         .url("http://localhost:8080")
-                        .description("Local Server")
-                // 향후 운영 서버 추가 예시:
-                // new Server().url("https://api.roadmap.example.com").description("Production Server")
+                        .description("로컬 개발 서버")
         );
     }
 }
