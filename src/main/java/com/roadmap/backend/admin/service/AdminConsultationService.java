@@ -44,6 +44,8 @@ public class AdminConsultationService {
                         .time(c.getConsultationTime())
                         .name(c.getStudentName())
                         .age(c.getStudentAge())
+                        .school(c.getStudentSchool())
+                        .grade(c.getStudentGrade())
                         .phoneNumber(c.getPhoneNumber())
                         .registeredAt(c.getRegisteredAt())
                         .build())

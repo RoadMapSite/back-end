@@ -48,6 +48,9 @@ public class ConsultationService {
         // 로직 0: 상담 시간·날짜 검증 (30분 단위, 영업시간, 과거 시점 차단)
         validateConsultationDateTime(request.getDate(), request.getTime());
 
+        // 로직 0-1: branch별 나이 vs 학교·학년 검증 (N: 나이 필수, Hi-end: 학교·학년 필수)
+        validateConsultationAgeOrSchoolGrade(request);
+
         // 로직 1: 토큰 검증
         Optional<PhoneVerification> verificationOpt = phoneVerificationRepository
                 .findFirstByVerificationTokenAndIsVerifiedTrue(token);
@@ -86,15 +89,21 @@ public class ConsultationService {
 
         // 로직 4: 저장
         LocalDateTime now = LocalDateTime.now();
-        Consultation consultation = Consultation.builder()
+        Consultation.ConsultationBuilder builder = Consultation.builder()
                 .branch(request.getBranch())
                 .consultationDate(request.getDate())
                 .consultationTime(request.getTime())
                 .studentName(request.getName())
-                .studentAge(request.getAge())
                 .phoneNumber(request.getPhoneNumber())
-                .registeredAt(now)
-                .build();
+                .registeredAt(now);
+
+        if (request.getBranch() == Branch.N) {
+            builder.studentAge(request.getAge()).studentSchool(null).studentGrade(null);
+        } else {
+            builder.studentAge(null).studentSchool(request.getSchool()).studentGrade(request.getGrade());
+        }
+
+        Consultation consultation = builder.build();
 
         Consultation saved = consultationRepository.save(consultation);
 
@@ -132,6 +141,29 @@ public class ConsultationService {
                 request.getTime(),
                 branchDisplay
         );
+    }
+
+    /**
+     * N: 나이 필수, Hi-end: 학교·학년 필수 검증.
+     */
+    private void validateConsultationAgeOrSchoolGrade(ConsultationRequest request) {
+        if (request.getBranch() == Branch.N) {
+            if (request.getAge() == null) {
+                throw new ConsultationException("N수관은 나이를 필수로 입력해주세요.");
+            }
+            if ((request.getSchool() != null && !request.getSchool().isBlank()) || request.getGrade() != null) {
+                throw new ConsultationException("N수관은 나이만 입력 가능합니다.");
+            }
+        } else {
+            boolean hasSchoolGrade = (request.getSchool() != null && !request.getSchool().isBlank())
+                    && request.getGrade() != null;
+            if (!hasSchoolGrade) {
+                throw new ConsultationException("Hi-end는 학교와 학년을 필수로 입력해주세요.");
+            }
+            if (request.getAge() != null) {
+                throw new ConsultationException("Hi-end는 학교·학년만 입력 가능합니다.");
+            }
+        }
     }
 
     /**

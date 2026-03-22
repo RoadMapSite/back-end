@@ -35,7 +35,7 @@ public class ConsultationController {
                     상담 예약을 확정합니다. 우측 상단 Authorize에서 인증 토큰을 등록해주세요.
                     
                     **입력 규칙**
-                    - **branch**: N 또는 Hi-end 둘 중 하나만 입력 가능
+                    - **branch**: N 또는 Hi-end. N → 나이(age) 필수, Hi-end → 학교(school)·학년(grade) 필수 (학년: 2학년, 3학년만)
                     - **time**: 영업시간 10:00~17:30 범위 내 30분 단위만 입력 가능 (예: 10:00, 10:30, 17:30)
                     
                     **유효성 검사**

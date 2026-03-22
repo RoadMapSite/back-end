@@ -1,5 +1,6 @@
 package com.roadmap.backend.admin.dto;
 
+import com.roadmap.backend.domain.Grade;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
@@ -29,8 +30,14 @@ public class WaitlistDetail {
     @Schema(description = "학생 이름")
     private String name;
 
-    @Schema(description = "학생 나이")
+    @Schema(description = "학생 나이 (N수관 또는 나이 선택 시)")
     private Integer age;
+
+    @Schema(description = "학교명 (Hi-end 또는 학교·학년 선택 시)")
+    private String school;
+
+    @Schema(description = "학년 (Hi-end 또는 학교·학년 선택 시, 2학년 또는 3학년)")
+    private Grade grade;
 
     @Schema(description = "휴대폰 번호")
     private String phoneNumber;

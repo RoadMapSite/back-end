@@ -52,6 +52,8 @@ public class AdminWaitlistService {
                             .season(w.getSeason())
                             .name(w.getStudentName())
                             .age(w.getStudentAge())
+                            .school(w.getStudentSchool())
+                            .grade(w.getStudentGrade())
                             .phoneNumber(w.getPhoneNumber())
                             .status(w.getStatus())
                             .registeredAt(w.getRegisteredAt())

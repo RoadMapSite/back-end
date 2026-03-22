@@ -1,5 +1,6 @@
 package com.roadmap.backend.consultation.entity;
 
+import com.roadmap.backend.domain.Grade;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -42,8 +43,15 @@ public class Consultation {
     @Column(name = "student_name", nullable = false, length = 100)
     private String studentName;
 
-    @Column(name = "student_age", nullable = false)
+    @Column(name = "student_age")
     private Integer studentAge;
+
+    @Column(name = "student_school", length = 100)
+    private String studentSchool;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "student_grade", length = 20)
+    private Grade studentGrade;
 
     @Column(name = "phone_number", nullable = false, length = 50)
     private String phoneNumber;
