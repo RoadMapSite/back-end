@@ -42,7 +42,7 @@ public class ReviewService {
                 .findByStatusAndIsTopTrueOrderByCreatedAtDesc("APPROVED");
 
         Page<Review> reviewPage = reviewRepository
-                .findByStatus("APPROVED", pageable);
+                .findByStatusAndIsTopFalse("APPROVED", pageable);
 
         // DTO 변환
         List<ReviewSummary> topDtos = topReviews.stream()
@@ -73,6 +73,9 @@ public class ReviewService {
             throw new ReviewException("존재하지 않는 후기입니다.", HttpStatus.NOT_FOUND);
         }
 
+        // 조회수 증가
+        review.incrementViewCount();
+
         List<String> imageUrls = Optional.ofNullable(review.getImages())
                 .orElse(List.of())
                 .stream()
@@ -85,7 +88,7 @@ public class ReviewService {
                 .content(review.getContent())
                 .authorName(review.getAuthorName())
                 .imageUrls(imageUrls)
-                .viewCount(review.getViewCount()+1)
+                .viewCount(review.getViewCount())
                 .createdAt(review.getCreatedAt())
                 .build();
     }

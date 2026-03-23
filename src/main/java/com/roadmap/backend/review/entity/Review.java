@@ -69,6 +69,10 @@ public class Review {
         image.assignReview(this);
     }
 
+    public void incrementViewCount() {
+        this.viewCount = (this.viewCount == null ? 0 : this.viewCount) + 1;
+    }
+
     public void updateIsTop(Boolean isTop, LocalDateTime updatedAt) {
         this.isTop = isTop;
         this.updatedAt = updatedAt;
