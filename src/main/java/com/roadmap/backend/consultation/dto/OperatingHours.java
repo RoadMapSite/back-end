@@ -17,7 +17,7 @@ public class OperatingHours {
     @Schema(description = "영업 시작 시간", example = "10:00")
     private String start;
 
-    @Schema(description = "영업 종료 시간", example = "18:00")
+    @Schema(description = "영업 종료 시간", example = "22:00")
     private String end;
 
     @Schema(description = "예약 단위(분)", example = "30")

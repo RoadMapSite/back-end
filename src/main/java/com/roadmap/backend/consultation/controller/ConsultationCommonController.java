@@ -27,7 +27,7 @@ public class ConsultationCommonController {
                     비회원도 조회 가능한 공통 API입니다. **예약 불가능한 시간(Booked Times)** 방식으로 응답합니다.
                     
                     ## 프론트엔드 연동 가이드
-                    1. **operatingHours**를 참고하여 10:00~18:00 구간의 전체 타임 슬롯(30분 단위: 10:00, 10:30, ... 17:30)을 그립니다.
+                    1. **operatingHours**를 참고하여 10:00~22:00 구간의 전체 타임 슬롯(30분 단위: 10:00, 10:30, ... 21:30)을 그립니다.
                     2. **unavailableSchedules**에 포함된 날짜·시간은 이미 예약되어 있으므로 **Disabled 처리**합니다.
                     3. unavailableSchedules에 없는 날짜·시간은 모두 예약 가능합니다.
                     4. 예약이 없는 날짜는 unavailableSchedules 배열에 아예 포함되지 않습니다.

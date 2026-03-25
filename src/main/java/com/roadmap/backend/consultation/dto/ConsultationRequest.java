@@ -27,8 +27,8 @@ public class ConsultationRequest {
     @NotNull(message = "상담 날짜는 필수입니다.")
     private LocalDate date;
 
-    @NotBlank(message = "상담 시간은 필수이며, 영업시간 10:00~17:30 내 30분 단위만 입력 가능합니다.")
-    @Schema(description = "상담 시간. 영업시간 10:00~17:30 내 30분 단위 (예: 10:00, 10:30, 17:30)", example = "10:00")
+    @NotBlank(message = "상담 시간은 필수이며, 영업시간 10:00~22:00(마지막 시작 21:30) 내 30분 단위만 입력 가능합니다.")
+    @Schema(description = "상담 시간. 영업시간 10:00~22:00 내 30분 단위 (예: 10:00, 20:00, 21:30)", example = "10:00")
     private String time;
 
     @NotBlank(message = "학생 이름은 필수입니다.")

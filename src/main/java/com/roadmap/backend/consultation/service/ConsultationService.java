@@ -169,7 +169,7 @@ public class ConsultationService {
     /**
      * 상담 일시 유효성 검증.
      * 1) 30분 단위 검증 (분이 00 또는 30)
-     * 2) 영업시간 검증 (10:00 ~ 17:30)
+     * 2) 영업시간 검증 (OPERATING_START ~ LAST_BOOKABLE_START)
      * 3) 과거 날짜/시간 차단
      */
     private void validateConsultationDateTime(LocalDate date, String time) {
@@ -178,11 +178,22 @@ public class ConsultationService {
         }
         String trimmedTime = time.trim();
         if (!TIME_30MIN_PATTERN.matcher(trimmedTime).matches()) {
-            throw new ConsultationException("상담 시간은 30분 단위(분이 00 또는 30)로만 입력 가능합니다. (예: 10:00, 17:30)");
+            throw new ConsultationException(
+                    "상담 시간은 30분 단위(분이 00 또는 30)로만 입력 가능합니다. (예: 10:00, "
+                            + ConsultationConfig.LAST_BOOKABLE_START
+                            + ")");
         }
         if (!ConsultationConfig.VALID_TIME_SLOTS.contains(trimmedTime)) {
             throw new ConsultationException(
-                    "상담 영업시간은 10:00 ~ 18:00입니다. 10:00 이전 또는 17:30 이후 시간은 예약할 수 없습니다.");
+                    "상담 영업시간은 "
+                            + ConsultationConfig.OPERATING_START
+                            + " ~ "
+                            + ConsultationConfig.OPERATING_END
+                            + "입니다. "
+                            + ConsultationConfig.OPERATING_START
+                            + " 이전 또는 "
+                            + ConsultationConfig.LAST_BOOKABLE_START
+                            + " 이후 시작 시간은 예약할 수 없습니다.");
         }
         LocalDateTime requestedAt = date.atTime(
                 Integer.parseInt(trimmedTime.substring(0, 2)),
