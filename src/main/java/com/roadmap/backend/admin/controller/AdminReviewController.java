@@ -1,5 +1,6 @@
 package com.roadmap.backend.admin.controller;
 
+import com.roadmap.backend.admin.dto.AdminReviewModels.PageResponse;
 import com.roadmap.backend.admin.dto.ReviewStatusUpdateRequest;
 import com.roadmap.backend.admin.dto.ReviewStatusUpdateResponse;
 import com.roadmap.backend.admin.dto.ReviewTopUpdateRequest;
@@ -16,11 +17,13 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -32,6 +35,34 @@ public class AdminReviewController {
     private static final String BEARER_PREFIX = "Bearer ";
 
     private final AdminReviewService adminReviewService;
+
+    @GetMapping
+    @Operation(
+            summary = "전체 후기 조회",
+            description = """
+                    관리자 전용. 승인 여부와 관계없이 등록된 모든 후기를 생성일 최신순으로 페이징 조회합니다.
+                    작성자명은 마스킹 없이 실명으로 반환됩니다.
+                    
+                    - **page**: 1부터 시작 (Spring 내부에서는 0-based로 변환)
+                    - **size**: 페이지 크기 (기본 10)
+                    """,
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    public ResponseEntity<PageResponse> getAllReviews(
+            @Parameter(hidden = true)
+            @RequestHeader(value = "Authorization", required = false) String authHeader,
+            @Parameter(description = "페이지 번호 (1부터)", example = "1")
+            @RequestParam(name = "page", defaultValue = "1") int page,
+            @Parameter(description = "페이지 크기", example = "10")
+            @RequestParam(name = "size", defaultValue = "10") int size) {
+
+        String token = extractToken(authHeader);
+        requireToken(token);
+        int safePage = page < 1 ? 1 : page;
+        int safeSize = size < 1 ? 10 : size;
+        PageResponse response = adminReviewService.getAllReviews(token, safePage, safeSize);
+        return ResponseEntity.ok(response);
+    }
 
     @PatchMapping("/{reviewId}/top")
     @Operation(

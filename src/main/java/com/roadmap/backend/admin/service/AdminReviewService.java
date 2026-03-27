@@ -1,18 +1,26 @@
 package com.roadmap.backend.admin.service;
 
 import com.roadmap.backend.admin.config.JwtProvider;
+import com.roadmap.backend.admin.dto.AdminReviewModels.PageResponse;
+import com.roadmap.backend.admin.dto.AdminReviewModels.ReviewItem;
 import com.roadmap.backend.admin.dto.ReviewStatusUpdateRequest;
 import com.roadmap.backend.admin.dto.ReviewStatusUpdateResponse;
 import com.roadmap.backend.admin.dto.ReviewTopUpdateRequest;
 import com.roadmap.backend.admin.dto.ReviewTopUpdateResponse;
 import com.roadmap.backend.admin.exception.AdminAuthException;
 import com.roadmap.backend.review.entity.Review;
+import com.roadmap.backend.review.entity.ReviewStatusType;
 import com.roadmap.backend.review.repository.ReviewRepository;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.security.SignatureException;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,9 +31,41 @@ import org.springframework.transaction.annotation.Transactional;
 public class AdminReviewService {
 
     private static final String ROLE_ADMIN = "ADMIN";
+    private static final DateTimeFormatter CREATED_DATE_FMT = DateTimeFormatter.ISO_LOCAL_DATE;
 
     private final ReviewRepository reviewRepository;
     private final JwtProvider jwtProvider;
+
+    public PageResponse getAllReviews(String token, int pageOneBased, int size) {
+        validateAdminToken(token);
+
+        int pageIndex = Math.max(0, pageOneBased - 1);
+        Pageable pageable = PageRequest.of(pageIndex, size);
+        Page<Review> pageResult = reviewRepository.findAllByOrderByCreatedAtDesc(pageable);
+
+        List<ReviewItem> reviews = pageResult.getContent().stream()
+                .map(this::toReviewItem)
+                .toList();
+
+        return PageResponse.builder()
+                .currentPage(pageResult.getNumber() + 1)
+                .totalPages(pageResult.getTotalPages())
+                .totalElements(pageResult.getTotalElements())
+                .reviews(reviews)
+                .build();
+    }
+
+    private ReviewItem toReviewItem(Review review) {
+        boolean approved = ReviewStatusType.APPROVED.name().equals(review.getStatus());
+        return ReviewItem.builder()
+                .reviewId(review.getReviewId())
+                .title(review.getTitle())
+                .authorName(review.getAuthorName())
+                .createdAt(review.getCreatedAt().toLocalDate().format(CREATED_DATE_FMT))
+                .isApproved(approved)
+                .isBest(Boolean.TRUE.equals(review.getIsTop()))
+                .build();
+    }
 
     @Transactional
     public ReviewTopUpdateResponse updateReviewTop(String token, Long reviewId, ReviewTopUpdateRequest request) {

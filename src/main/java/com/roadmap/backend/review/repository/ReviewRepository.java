@@ -13,4 +13,7 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
     List<Review> findByAuthorPhoneNumber(String authorPhoneNumber);
     List<Review> findByStatusAndIsTopTrueOrderByCreatedAtDesc(String status);
     Page<Review> findByStatusAndIsTopFalse(String status, Pageable pageable);
+
+    /** 관리자: 전체 후기, 생성일 최신순 */
+    Page<Review> findAllByOrderByCreatedAtDesc(Pageable pageable);
 }
