@@ -1,5 +1,6 @@
 package com.roadmap.backend.admin.controller;
 
+import com.roadmap.backend.admin.dto.AdminReviewDetailResponse;
 import com.roadmap.backend.admin.dto.AdminReviewModels.PageResponse;
 import com.roadmap.backend.admin.dto.ReviewStatusUpdateRequest;
 import com.roadmap.backend.admin.dto.ReviewStatusUpdateResponse;
@@ -61,6 +62,29 @@ public class AdminReviewController {
         int safePage = page < 1 ? 1 : page;
         int safeSize = size < 1 ? 10 : size;
         PageResponse response = adminReviewService.getAllReviews(token, safePage, safeSize);
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/{reviewId}")
+    @Operation(
+            summary = "상세 후기 조회",
+            description = """
+                    관리자 전용. 특정 후기의 전체 내용을 조회합니다.
+                    일반 사용자용 상세와 달리 **조회수(viewCount)는 증가하지 않습니다.**
+                    작성자명은 마스킹 없이 실명으로 반환됩니다.
+                    """,
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    public ResponseEntity<AdminReviewDetailResponse> getReviewDetail(
+            @Parameter(hidden = true)
+            @RequestHeader(value = "Authorization", required = false) String authHeader,
+            @Parameter(name = "reviewId", in = ParameterIn.PATH, required = true, description = "후기 ID",
+                    schema = @Schema(type = "integer", example = "14"))
+            @PathVariable("reviewId") Long reviewId) {
+
+        String token = extractToken(authHeader);
+        requireToken(token);
+        AdminReviewDetailResponse response = adminReviewService.getReviewDetail(token, reviewId);
         return ResponseEntity.ok(response);
     }
 

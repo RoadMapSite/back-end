@@ -1,6 +1,7 @@
 package com.roadmap.backend.admin.service;
 
 import com.roadmap.backend.admin.config.JwtProvider;
+import com.roadmap.backend.admin.dto.AdminReviewDetailResponse;
 import com.roadmap.backend.admin.dto.AdminReviewModels.PageResponse;
 import com.roadmap.backend.admin.dto.AdminReviewModels.ReviewItem;
 import com.roadmap.backend.admin.dto.ReviewStatusUpdateRequest;
@@ -9,13 +10,16 @@ import com.roadmap.backend.admin.dto.ReviewTopUpdateRequest;
 import com.roadmap.backend.admin.dto.ReviewTopUpdateResponse;
 import com.roadmap.backend.admin.exception.AdminAuthException;
 import com.roadmap.backend.review.entity.Review;
+import com.roadmap.backend.review.entity.ReviewImage;
 import com.roadmap.backend.review.entity.ReviewStatusType;
 import com.roadmap.backend.review.repository.ReviewRepository;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.security.SignatureException;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.Comparator;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -32,6 +36,7 @@ public class AdminReviewService {
 
     private static final String ROLE_ADMIN = "ADMIN";
     private static final DateTimeFormatter CREATED_DATE_FMT = DateTimeFormatter.ISO_LOCAL_DATE;
+    private static final ZoneId SEOUL = ZoneId.of("Asia/Seoul");
 
     private final ReviewRepository reviewRepository;
     private final JwtProvider jwtProvider;
@@ -52,6 +57,37 @@ public class AdminReviewService {
                 .totalPages(pageResult.getTotalPages())
                 .totalElements(pageResult.getTotalElements())
                 .reviews(reviews)
+                .build();
+    }
+
+    /**
+     * 관리자 후기 상세. {@code readOnly} 트랜잭션에서 조회만 하며 {@link Review#incrementViewCount()}를 호출하지 않아 조회수가 변하지 않는다.
+     */
+    public AdminReviewDetailResponse getReviewDetail(String token, Long reviewId) {
+        validateAdminToken(token);
+
+        Review review = reviewRepository.findByReviewIdWithImages(reviewId)
+                .orElseThrow(() -> new AdminAuthException("후기를 찾을 수 없습니다.", HttpStatus.NOT_FOUND));
+
+        List<String> imageUrls = review.getImages().stream()
+                .sorted(Comparator.comparing(ReviewImage::getSortOrder, Comparator.nullsLast(Integer::compareTo)))
+                .map(ReviewImage::getImageUrl)
+                .toList();
+
+        boolean approved = ReviewStatusType.APPROVED.name().equals(review.getStatus());
+        String createdAtUtc = DateTimeFormatter.ISO_INSTANT.format(
+                review.getCreatedAt().atZone(SEOUL).toInstant());
+
+        return AdminReviewDetailResponse.builder()
+                .reviewId(review.getReviewId())
+                .title(review.getTitle())
+                .content(review.getContent())
+                .authorName(review.getAuthorName())
+                .imageUrls(imageUrls)
+                .viewCount(review.getViewCount())
+                .isApproved(approved)
+                .isBest(Boolean.TRUE.equals(review.getIsTop()))
+                .createdAt(createdAtUtc)
                 .build();
     }
 
