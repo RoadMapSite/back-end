@@ -1,6 +1,7 @@
 package com.roadmap.backend.admin.exception;
 
 import com.roadmap.backend.admin.dto.AdminErrorResponse;
+import jakarta.persistence.EntityNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -18,5 +19,14 @@ public class AdminAuthExceptionHandler {
                 .message(ex.getMessage())
                 .build();
         return ResponseEntity.status(status).body(response);
+    }
+
+    @ExceptionHandler(EntityNotFoundException.class)
+    public ResponseEntity<AdminErrorResponse> handleEntityNotFound(EntityNotFoundException ex) {
+        AdminErrorResponse response = AdminErrorResponse.builder()
+                .success(false)
+                .message(ex.getMessage())
+                .build();
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
     }
 }

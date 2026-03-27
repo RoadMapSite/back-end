@@ -2,6 +2,7 @@ package com.roadmap.backend.admin.service;
 
 import com.roadmap.backend.admin.config.JwtProvider;
 import com.roadmap.backend.admin.dto.AdminWaitlistResponse;
+import com.roadmap.backend.admin.dto.WaitlistDeleteResponse;
 import com.roadmap.backend.admin.dto.WaitlistDetail;
 import com.roadmap.backend.admin.dto.WaitlistStatusUpdateRequest;
 import com.roadmap.backend.admin.dto.WaitlistStatusUpdateResponse;
@@ -12,6 +13,7 @@ import com.roadmap.backend.sms.util.SmsMessageUtil;
 import com.roadmap.backend.waitlist.entity.Season;
 import com.roadmap.backend.waitlist.entity.Waitlist;
 import com.roadmap.backend.waitlist.repository.WaitlistRepository;
+import com.roadmap.backend.waitlist.service.WaitlistService;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.security.SignatureException;
@@ -31,8 +33,10 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 public class AdminWaitlistService {
 
     private static final String ROLE_ADMIN = "ADMIN";
+    private static final String DELETE_SUCCESS_MESSAGE = "해당 학생의 대기 등록이 성공적으로 삭제되었습니다.";
 
     private final WaitlistRepository waitlistRepository;
+    private final WaitlistService waitlistService;
     private final JwtProvider jwtProvider;
     private final SmsService smsService;
 
@@ -95,6 +99,16 @@ public class AdminWaitlistService {
         return WaitlistStatusUpdateResponse.builder()
                 .success(true)
                 .message(responseMessage)
+                .build();
+    }
+
+    @Transactional
+    public WaitlistDeleteResponse deleteWaitlist(String token, Long waitlistId) {
+        validateAdminToken(token);
+        waitlistService.deleteWaitlistById(waitlistId);
+        return WaitlistDeleteResponse.builder()
+                .success(true)
+                .message(DELETE_SUCCESS_MESSAGE)
                 .build();
     }
 

@@ -1,6 +1,7 @@
 package com.roadmap.backend.admin.controller;
 
 import com.roadmap.backend.admin.dto.AdminWaitlistResponse;
+import com.roadmap.backend.admin.dto.WaitlistDeleteResponse;
 import com.roadmap.backend.admin.dto.WaitlistStatusUpdateRequest;
 import com.roadmap.backend.admin.dto.WaitlistStatusUpdateResponse;
 import com.roadmap.backend.admin.exception.AdminAuthException;
@@ -15,6 +16,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import jakarta.validation.Valid;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -78,6 +80,25 @@ public class AdminWaitlistController {
         requireToken(token);
         WaitlistStatusUpdateResponse response = adminWaitlistService.updateWaitlistStatus(
                 token, waitlistId, request);
+        return ResponseEntity.ok(response);
+    }
+
+    @DeleteMapping("/{waitlistId}")
+    @Operation(
+            summary = "등록 대기 학생 삭제",
+            description = "관리자 전용. 특정 대기열(waitlist) 등록을 삭제합니다.",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    public ResponseEntity<WaitlistDeleteResponse> deleteWaitlist(
+            @Parameter(hidden = true)
+            @RequestHeader(value = "Authorization", required = false) String authHeader,
+            @Parameter(name = "waitlistId", in = ParameterIn.PATH, required = true, description = "대기열 ID",
+                    schema = @Schema(type = "integer", example = "1"))
+            @PathVariable("waitlistId") Long waitlistId) {
+
+        String token = extractToken(authHeader);
+        requireToken(token);
+        WaitlistDeleteResponse response = adminWaitlistService.deleteWaitlist(token, waitlistId);
         return ResponseEntity.ok(response);
     }
 

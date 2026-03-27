@@ -10,6 +10,7 @@ import com.roadmap.backend.waitlist.exception.WaitlistException;
 import com.roadmap.backend.sms.service.SmsService;
 import com.roadmap.backend.sms.util.SmsMessageUtil;
 import com.roadmap.backend.waitlist.repository.WaitlistRepository;
+import jakarta.persistence.EntityNotFoundException;
 import java.time.LocalDateTime;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
@@ -27,6 +28,15 @@ public class WaitlistService {
     private final WaitlistRepository waitlistRepository;
     private final PhoneVerificationRepository phoneVerificationRepository;
     private final SmsService smsService;
+
+    /** 관리자용: 대기열 ID로 조회 후 물리 삭제. 없으면 EntityNotFoundException. */
+    @Transactional
+    public void deleteWaitlistById(Long waitlistId) {
+        Waitlist waitlist = waitlistRepository
+                .findById(waitlistId)
+                .orElseThrow(() -> new EntityNotFoundException("대기열을 찾을 수 없습니다. (waitlistId=" + waitlistId + ")"));
+        waitlistRepository.delete(waitlist);
+    }
 
     @Transactional
     public WaitlistRegisterResponse registerWaitlist(WaitlistRegisterRequest request, String token) {
