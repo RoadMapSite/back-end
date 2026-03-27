@@ -3,6 +3,17 @@ solapi:
   api-secret: ${SOLAPI_API_SECRET}
   sender-number: ${SOLAPI_SENDER_NUMBER}
 
+# AWS S3 (실제 키·버킷은 프로필별 yml 또는 환경 변수로 주입)
+cloud:
+  aws:
+    credentials:
+      access-key: ${AWS_ACCESS_KEY:}
+      secret-key: ${AWS_SECRET_KEY:}
+    region:
+      static: ${AWS_REGION:ap-northeast-2}
+    s3:
+      bucket: ${AWS_S3_BUCKET:}
+
 app:
   jwt:
     secret: ${JWT_SECRET:roadmap-admin-jwt-secret-key-min-256bits-for-hs256-algorithm}
@@ -12,9 +23,13 @@ spring:
   config:
     import: optional:file:.env[.properties]
   profiles:
-    active: ${SPRING_PROFILES_ACTIVE:local} 
+    active: ${SPRING_PROFILES_ACTIVE:local}
   application:
     name: backend
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 12MB
   jpa:
     properties:
       hibernate:

@@ -23,6 +23,7 @@ public class SecurityConfig {
                         .requestMatchers("/v1/admin/**").permitAll()
                         .requestMatchers("/api/ping").permitAll()
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
+                        .requestMatchers("/v1/images/**").permitAll()
                         .anyRequest().authenticated()
                 );
 
