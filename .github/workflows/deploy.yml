@@ -52,4 +52,8 @@ jobs:
             -DSOLAPI_API_KEY="${{ secrets.SOLAPI_API_KEY }}" \
             -DSOLAPI_API_SECRET="${{ secrets.SOLAPI_API_SECRET }}" \
             -DSOLAPI_SENDER_NUMBER="${{ secrets.SOLAPI_SENDER_NUMBER }}" \
+            -DAWS_REGION="${{ secrets.AWS_REGION }}" \
+            -DAWS_S3_BUCKET="${{ secrets.AWS_S3_BUCKET }}" \
+            -DAWS_ACCESS_KEY="${{ secrets.AWS_ACCESS_KEY }}" \
+            -DAWS_SECRET_KEY="${{ secrets.AWS_SECRET_KEY }}" \
             /home/ec2-user/*.jar > /home/ec2-user/app.log 2>&1 &
