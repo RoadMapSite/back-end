@@ -66,7 +66,12 @@ public class WaitlistService {
                 .registeredAt(now)
                 .updatedAt(now);
 
-        if (useAge(request.getSeason(), branchToSave, request)) {
+        Season seasonEnum = Season.valueOf(request.getSeason());
+        if (seasonEnum == Season.SUMMER || seasonEnum == Season.WINTER) {
+            builder.studentAge(request.getAge())
+                    .studentSchool(request.getSchool())
+                    .studentGrade(request.getGrade());
+        } else if ("N".equals(branchToSave)) {
             builder.studentAge(request.getAge()).studentSchool(null).studentGrade(null);
         } else {
             builder.studentAge(null).studentSchool(request.getSchool()).studentGrade(request.getGrade());
@@ -165,8 +170,8 @@ public class WaitlistService {
     }
 
     /**
-     * 시즌·branch에 따른 나이 vs 학교·학년 검증.
-     * - SUMMER, WINTER: 나이 또는 학교+학년 중 하나만 입력
+     * 시즌·branch에 따른 나이·학교·학년 검증.
+     * - SUMMER, WINTER: 나이, 학교, 학년 모두 필수
      * - SEMESTER + N: 나이 필수
      * - SEMESTER + Hi-end: 학교·학년 필수
      */
@@ -177,11 +182,8 @@ public class WaitlistService {
                 && request.getGrade() != null;
 
         if (s == Season.SUMMER || s == Season.WINTER) {
-            if (hasAge && hasSchoolGrade) {
-                throw new WaitlistException("나이와 학교·학년 중 하나만 입력해주세요.", HttpStatus.BAD_REQUEST);
-            }
-            if (!hasAge && !hasSchoolGrade) {
-                throw new WaitlistException("나이 또는 학교·학년을 입력해주세요.", HttpStatus.BAD_REQUEST);
+            if (!hasAge || !hasSchoolGrade) {
+                throw new WaitlistException("여름캠프·겨울캠프는 나이, 학교, 학년을 모두 입력해주세요.", HttpStatus.BAD_REQUEST);
             }
             return;
         }
@@ -204,15 +206,6 @@ public class WaitlistService {
                 throw new WaitlistException("Hi-end는 학교·학년만 입력 가능합니다.", HttpStatus.BAD_REQUEST);
             }
         }
-    }
-
-    /** 시즌·branch에 따라 나이 사용 여부 */
-    private boolean useAge(String season, String branch, WaitlistRegisterRequest request) {
-        Season s = Season.valueOf(season);
-        if (s == Season.SUMMER || s == Season.WINTER) {
-            return request.getAge() != null;
-        }
-        return "N".equals(branch);
     }
 
 }

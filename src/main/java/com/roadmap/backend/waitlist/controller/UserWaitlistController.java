@@ -39,7 +39,7 @@ public class UserWaitlistController {
                     - 토큰 내 휴대폰 번호와 Request Body의 phoneNumber 일치 검증
                     
                     **시즌별 branch 규칙**
-                    - SUMMER, WINTER: branch 무시. 나이(age) 또는 학교+학년(school, grade) 중 하나만 입력
+                    - SUMMER, WINTER: branch 무시. 나이·학교·학년 모두 필수 (학년: 2학년, 3학년만)
                     - SEMESTER_1, SEMESTER_2: branch 필수. N → 나이 필수, Hi-end → 학교·학년 필수 (학년: 2학년, 3학년만)
                     """,
             security = @SecurityRequirement(name = "bearerAuth")

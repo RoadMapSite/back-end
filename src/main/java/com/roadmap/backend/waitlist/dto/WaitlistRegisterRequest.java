@@ -13,7 +13,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Schema(description = """
         학생 대기 등록 요청.
-        - SUMMER, WINTER: 나이(age) 또는 학교+학년(school, grade) 중 하나만 입력
+        - SUMMER, WINTER: 나이(age), 학교(school), 학년(grade) 모두 필수 (학년: 2학년, 3학년만)
         - SEMESTER_1, SEMESTER_2 + N: 나이(age) 필수
         - SEMESTER_1, SEMESTER_2 + Hi-end: 학교(school), 학년(grade) 필수 (학년: 2학년, 3학년만)
         """)
@@ -32,13 +32,13 @@ public class WaitlistRegisterRequest {
     @Schema(description = "학생 이름", required = true, example = "홍길동")
     private String name;
 
-    @Schema(description = "학생 나이 (N수관 또는 SUMMER/WINTER에서 나이 선택 시 필수)", example = "15")
+    @Schema(description = "학생 나이 (SUMMER/WINTER·N수관 시 필수)", example = "15")
     private Integer age;
 
-    @Schema(description = "학교명 (Hi-end 또는 SUMMER/WINTER에서 학교+학년 선택 시 필수, 자유 입력)", example = "OO고등학교")
+    @Schema(description = "학교명 (SUMMER/WINTER·Hi-end 시 필수, 자유 입력)", example = "OO고등학교")
     private String school;
 
-    @Schema(description = "학년 (Hi-end 또는 SUMMER/WINTER에서 학교+학년 선택 시 필수, 2학년 또는 3학년만)", example = "2학년", allowableValues = {"2학년", "3학년"})
+    @Schema(description = "학년 (SUMMER/WINTER·Hi-end 시 필수, 2학년 또는 3학년만)", example = "2학년", allowableValues = {"2학년", "3학년"})
     private Grade grade;
 
     @NotBlank(message = "휴대폰 번호는 필수입니다.")
