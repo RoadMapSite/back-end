@@ -1,8 +1,8 @@
 solapi:
   api-key: ${SOLAPI_API_KEY}
   api-secret: ${SOLAPI_API_SECRET}
-  # 휴대폰 인증·지점 미분기 SMS 기본 발신번호 (N수관 = SOLAPI_SENDER_NUMBER_N)
-  sender-number: ${SOLAPI_SENDER_NUMBER_N}
+  # SmsService 2인자(send to,text) 기본 발신번호 — 지점 분기 없을 때 하이엔드 번호
+  sender-number: ${SOLAPI_SENDER_NUMBER_HIGHEND}
   sender:
     number:
       n: ${SOLAPI_SENDER_NUMBER_N}

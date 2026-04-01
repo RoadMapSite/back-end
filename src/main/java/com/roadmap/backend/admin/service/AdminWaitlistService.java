@@ -8,6 +8,7 @@ import com.roadmap.backend.admin.dto.WaitlistStatusUpdateRequest;
 import com.roadmap.backend.admin.dto.WaitlistStatusUpdateResponse;
 import com.roadmap.backend.admin.exception.AdminAuthException;
 import com.roadmap.backend.admin.sms.WaitlistStatusSmsTemplate;
+import com.roadmap.backend.consultation.entity.Branch;
 import com.roadmap.backend.sms.service.SmsService;
 import com.roadmap.backend.sms.util.SmsMessageUtil;
 import com.roadmap.backend.waitlist.entity.Season;
@@ -21,6 +22,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.IntStream;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -39,6 +41,12 @@ public class AdminWaitlistService {
     private final WaitlistService waitlistService;
     private final JwtProvider jwtProvider;
     private final SmsService smsService;
+
+    @Value("${solapi.sender.number.n}")
+    private String solapiSenderNumberN;
+
+    @Value("${solapi.sender.number.highend}")
+    private String solapiSenderNumberHighend;
 
     public AdminWaitlistResponse getWaitlistList(String token, String seasonParam, String branchParam) {
         validateAdminToken(token);
@@ -85,10 +93,11 @@ public class AdminWaitlistService {
             String phoneForSms = waitlist.getPhoneNumber();
             String seasonAndBranch = SmsMessageUtil.formatSeasonAndBranch(waitlist.getSeason(), waitlist.getBranch());
             String smsMessage = smsTemplate.format(waitlist.getStudentName(), seasonAndBranch);
+            final String senderFrom = resolveAdminWaitlistStatusSmsSender(waitlist.getBranch());
             TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
                 @Override
                 public void afterCommit() {
-                    smsService.send(phoneForSms, smsMessage);
+                    smsService.send(phoneForSms, smsMessage, senderFrom);
                 }
             });
         }
@@ -128,6 +137,25 @@ public class AdminWaitlistService {
             throw new AdminAuthException("유효하지 않은 토큰입니다.", HttpStatus.UNAUTHORIZED);
         } catch (Exception e) {
             throw new AdminAuthException("인증에 실패했습니다.", HttpStatus.UNAUTHORIZED);
+        }
+    }
+
+    /**
+     * Waitlist.branch는 String 저장. 캠프(SUMMER/WINTER) 등 branch가 비어 있으면 하이엔드 발신번호(기본).
+     * N → N수관, Hi-end → 하이엔드.
+     */
+    private String resolveAdminWaitlistStatusSmsSender(String branchStored) {
+        if (branchStored == null || branchStored.isBlank()) {
+            return solapiSenderNumberHighend;
+        }
+        try {
+            Branch b = Branch.fromString(branchStored);
+            if (b == null) {
+                return solapiSenderNumberHighend;
+            }
+            return b.resolveSolapiSenderNumber(solapiSenderNumberN, solapiSenderNumberHighend);
+        } catch (IllegalArgumentException e) {
+            return solapiSenderNumberHighend;
         }
     }
 

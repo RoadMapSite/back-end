@@ -108,21 +108,21 @@ public class WaitlistService {
     }
 
     /**
-     * 대기 등록 SMS 발신 번호. SUMMER/WINTER 등 DB에 branch가 없을 때는 N수관 번호(기본).
-     * SEMESTER는 resolveBranch 결과(N / Hi-end 문자열)로 분기.
+     * 대기 등록 SMS 발신 번호. 캠프(SUMMER/WINTER) 등 branch가 없을 때는 하이엔드 번호(인증·관리자와 동일).
+     * 학기(SEMESTER)는 N / Hi-end 문자열로 분기.
      */
     private String resolveWaitlistSmsSenderFrom(String branchSavedOrNull) {
         if (branchSavedOrNull == null || branchSavedOrNull.isBlank()) {
-            return solapiSenderNumberN;
+            return solapiSenderNumberHighend;
         }
         try {
             Branch b = Branch.fromString(branchSavedOrNull);
             if (b == null) {
-                return solapiSenderNumberN;
+                return solapiSenderNumberHighend;
             }
             return b.resolveSolapiSenderNumber(solapiSenderNumberN, solapiSenderNumberHighend);
         } catch (IllegalArgumentException e) {
-            return solapiSenderNumberN;
+            return solapiSenderNumberHighend;
         }
     }
 
