@@ -8,7 +8,7 @@ public interface WaitlistRepository extends JpaRepository<Waitlist, Long> {
 
     boolean existsByPhoneNumberAndSeason(String phoneNumber, String season);
 
-    List<Waitlist> findBySeasonOrderByRegisteredAtAsc(String season);
+    List<Waitlist> findBySeasonOrderByIsExistingDescRegisteredAtAsc(String season);
 
-    List<Waitlist> findBySeasonAndBranchOrderByRegisteredAtAsc(String season, String branch);
+    List<Waitlist> findBySeasonAndBranchOrderByIsExistingDescRegisteredAtAsc(String season, String branch);
 }

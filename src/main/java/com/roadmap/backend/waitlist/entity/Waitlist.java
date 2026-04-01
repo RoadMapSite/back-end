@@ -51,6 +51,10 @@ public class Waitlist {
     @Column(name = "phone_number", nullable = false, length = 50)
     private String phoneNumber;
 
+    @Column(name = "is_existing", nullable = false)
+    @Builder.Default
+    private boolean isExisting = false;
+
     @Column(nullable = false, length = 50)
     @Builder.Default
     private String status = "WAITING";

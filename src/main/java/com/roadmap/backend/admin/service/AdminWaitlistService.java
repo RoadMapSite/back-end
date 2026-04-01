@@ -69,6 +69,7 @@ public class AdminWaitlistService {
                             .phoneNumber(w.getPhoneNumber())
                             .status(w.getStatus())
                             .registeredAt(w.getRegisteredAt())
+                            .isExisting(w.isExisting())
                             .build();
                 })
                 .toList();
@@ -186,11 +187,11 @@ public class AdminWaitlistService {
         Season season = Season.valueOf(seasonParam);
 
         if (season == Season.SUMMER || season == Season.WINTER) {
-            return waitlistRepository.findBySeasonOrderByRegisteredAtAsc(seasonParam);
+            return waitlistRepository.findBySeasonOrderByIsExistingDescRegisteredAtAsc(seasonParam);
         }
 
         String branch = normalizeBranch(branchParam);
-        return waitlistRepository.findBySeasonAndBranchOrderByRegisteredAtAsc(seasonParam, branch);
+        return waitlistRepository.findBySeasonAndBranchOrderByIsExistingDescRegisteredAtAsc(seasonParam, branch);
     }
 
     private String normalizeBranch(String branchParam) {

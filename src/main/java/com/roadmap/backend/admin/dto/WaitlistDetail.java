@@ -47,4 +47,7 @@ public class WaitlistDetail {
 
     @Schema(description = "등록 일시")
     private LocalDateTime registeredAt;
+
+    @Schema(description = "기존 재원생 여부")
+    private Boolean isExisting;
 }

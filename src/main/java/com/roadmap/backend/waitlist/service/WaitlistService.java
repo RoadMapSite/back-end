@@ -70,6 +70,7 @@ public class WaitlistService {
                 .season(request.getSeason())
                 .studentName(request.getName())
                 .phoneNumber(phoneNumber)
+                .isExisting(Boolean.TRUE.equals(request.getIsExisting()))
                 .status("WAITING")
                 .registeredAt(now)
                 .updatedAt(now);

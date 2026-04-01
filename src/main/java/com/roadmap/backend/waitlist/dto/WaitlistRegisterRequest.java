@@ -44,4 +44,7 @@ public class WaitlistRegisterRequest {
     @NotBlank(message = "휴대폰 번호는 필수입니다.")
     @Schema(description = "휴대폰 번호", required = true, example = "01012345678")
     private String phoneNumber;
+
+    @Schema(description = "기존 재원생 여부 (미입력 시 false)", example = "false")
+    private Boolean isExisting;
 }
