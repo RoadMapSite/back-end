@@ -2,6 +2,7 @@ package com.roadmap.backend.waitlist.service;
 
 import com.roadmap.backend.auth.entity.PhoneVerification;
 import com.roadmap.backend.auth.repository.PhoneVerificationRepository;
+import com.roadmap.backend.consultation.entity.Branch;
 import com.roadmap.backend.waitlist.dto.WaitlistRegisterRequest;
 import com.roadmap.backend.waitlist.dto.WaitlistRegisterResponse;
 import com.roadmap.backend.waitlist.entity.Season;
@@ -14,6 +15,7 @@ import jakarta.persistence.EntityNotFoundException;
 import java.time.LocalDateTime;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,6 +30,12 @@ public class WaitlistService {
     private final WaitlistRepository waitlistRepository;
     private final PhoneVerificationRepository phoneVerificationRepository;
     private final SmsService smsService;
+
+    @Value("${solapi.sender.number.n}")
+    private String solapiSenderNumberN;
+
+    @Value("${solapi.sender.number.highend}")
+    private String solapiSenderNumberHighend;
 
     /** 관리자용: 대기열 ID로 조회 후 물리 삭제. 없으면 EntityNotFoundException. */
     @Transactional
@@ -83,10 +91,11 @@ public class WaitlistService {
 
         String phoneForSms = saved.getPhoneNumber();
         String smsMessage = buildWaitlistRegisterSmsMessage(saved);
+        final String senderFrom = resolveWaitlistSmsSenderFrom(branchToSave);
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
             @Override
             public void afterCommit() {
-                smsService.send(phoneForSms, smsMessage);
+                smsService.send(phoneForSms, smsMessage, senderFrom);
             }
         });
 
@@ -96,6 +105,25 @@ public class WaitlistService {
                 .waitlistId(saved.getWaitlistId())
                 .registeredAt(saved.getRegisteredAt())
                 .build();
+    }
+
+    /**
+     * 대기 등록 SMS 발신 번호. SUMMER/WINTER 등 DB에 branch가 없을 때는 N수관 번호(기본).
+     * SEMESTER는 resolveBranch 결과(N / Hi-end 문자열)로 분기.
+     */
+    private String resolveWaitlistSmsSenderFrom(String branchSavedOrNull) {
+        if (branchSavedOrNull == null || branchSavedOrNull.isBlank()) {
+            return solapiSenderNumberN;
+        }
+        try {
+            Branch b = Branch.fromString(branchSavedOrNull);
+            if (b == null) {
+                return solapiSenderNumberN;
+            }
+            return b.resolveSolapiSenderNumber(solapiSenderNumberN, solapiSenderNumberHighend);
+        } catch (IllegalArgumentException e) {
+            return solapiSenderNumberN;
+        }
     }
 
     /**
