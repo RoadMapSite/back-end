@@ -14,8 +14,10 @@ import com.roadmap.backend.sms.service.SmsService;
 import com.roadmap.backend.sms.util.SmsMessageUtil;
 import com.roadmap.backend.consultation.exception.ConsultationException;
 import com.roadmap.backend.consultation.repository.ConsultationRepository;
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
@@ -23,6 +25,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -40,8 +43,8 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 @Transactional(readOnly = true)
 public class ConsultationService {
 
-    private static final Pattern TIME_30MIN_PATTERN = Pattern.compile("^([01]?\\d|2[0-3]):(00|30)$");
     private static final Pattern YEAR_MONTH_PATTERN = Pattern.compile("^\\d{4}-(0[1-9]|1[0-2])$");
+    private static final DateTimeFormatter CONSULTATION_TIME_INPUT = DateTimeFormatter.ofPattern("H:mm");
 
     private final ConsultationRepository consultationRepository;
     private final PhoneVerificationRepository phoneVerificationRepository;
@@ -56,6 +59,7 @@ public class ConsultationService {
     @Transactional
     public ConsultationResponse registerConsultation(ConsultationRequest request, String token) {
         requireConsultationBranchEnum(request);
+        validateConsultationAppointmentRules(request);
 
         if (request.getBranch() == Branch.HI_END) {
             log.info(
@@ -75,9 +79,6 @@ public class ConsultationService {
                     request.getAge(),
                     request.getPhoneNumber());
         }
-
-        // 로직 0: 상담 시간·날짜 검증 (30분 단위, 영업시간, 과거 시점 차단)
-        validateConsultationDateTime(request.getDate(), request.getTime());
 
         // 로직 0-1: branch별 나이 vs 학교·학년 검증 (N: 나이 필수, Hi-end: 학교·학년 필수)
         validateConsultationAgeOrSchoolGrade(request);
@@ -250,40 +251,71 @@ public class ConsultationService {
     }
 
     /**
-     * 상담 일시 유효성 검증.
-     * 1) 30분 단위 검증 (분이 00 또는 30)
-     * 2) 영업시간 검증 (OPERATING_START ~ LAST_BOOKABLE_START)
-     * 3) 과거 날짜/시간 차단
+     * 예약 일시 강제 검증 (프론트 우회 방지).
+     * <ul>
+     *   <li>예약일: 오늘 기준 최소 이틀 뒤({@code LocalDate.now().plusDays(2)})부터</li>
+     *   <li>일요일 불가</li>
+     *   <li>지점·요일별 허용 시각만 (N: 평·토 10:00·17:00 / Hi-end: 평 17:00·20:00, 토 10:00·16:00)</li>
+     * </ul>
      */
-    private void validateConsultationDateTime(LocalDate date, String time) {
-        if (time == null || time.isBlank()) {
-            throw new ConsultationException("상담 시간은 필수이며, 30분 단위(예: 10:00, 10:30)만 입력 가능합니다.");
+    private void validateConsultationAppointmentRules(ConsultationRequest request) {
+        LocalDate date = request.getDate();
+        if (date == null) {
+            throw new ConsultationException("상담 날짜는 필수입니다.");
         }
-        String trimmedTime = time.trim();
-        if (!TIME_30MIN_PATTERN.matcher(trimmedTime).matches()) {
-            throw new ConsultationException(
-                    "상담 시간은 30분 단위(분이 00 또는 30)로만 입력 가능합니다. (예: 10:00, "
-                            + ConsultationConfig.LAST_BOOKABLE_START
-                            + ")");
+
+        LocalDate today = LocalDate.now();
+        LocalDate earliestBookable = today.plusDays(2);
+        if (date.isBefore(earliestBookable)) {
+            throw new ConsultationException("상담 신청은 오늘 기준으로 이틀 뒤 날짜부터 가능합니다.");
         }
-        if (!ConsultationConfig.VALID_TIME_SLOTS.contains(trimmedTime)) {
-            throw new ConsultationException(
-                    "상담 영업시간은 "
-                            + ConsultationConfig.OPERATING_START
-                            + " ~ "
-                            + ConsultationConfig.OPERATING_END
-                            + "입니다. "
-                            + ConsultationConfig.OPERATING_START
-                            + " 이전 또는 "
-                            + ConsultationConfig.LAST_BOOKABLE_START
-                            + " 이후 시작 시간은 예약할 수 없습니다.");
+
+        DayOfWeek dow = date.getDayOfWeek();
+        if (dow == DayOfWeek.SUNDAY) {
+            throw new ConsultationException("일요일은 상담을 운영하지 않습니다.");
         }
-        LocalDateTime requestedAt = date.atTime(
-                Integer.parseInt(trimmedTime.substring(0, 2)),
-                Integer.parseInt(trimmedTime.substring(3, 5)));
-        if (requestedAt.isBefore(LocalDateTime.now())) {
-            throw new ConsultationException("과거 날짜 또는 시간은 예약할 수 없습니다.");
+
+        String timeRaw = request.getTime();
+        if (timeRaw == null || timeRaw.isBlank()) {
+            throw new ConsultationException("상담 시간은 필수입니다.");
         }
+
+        LocalTime requestedTime;
+        try {
+            requestedTime = LocalTime.parse(timeRaw.trim(), CONSULTATION_TIME_INPUT).withSecond(0).withNano(0);
+        } catch (DateTimeParseException e) {
+            throw new ConsultationException("상담 시간 형식이 올바르지 않습니다. (예: 10:00, 17:00)");
+        }
+
+        Branch branch = request.getBranch();
+        Set<LocalTime> allowed = resolveConsultationAllowedTimes(branch, dow);
+        if (!allowed.contains(requestedTime)) {
+            throw new ConsultationException("선택하신 시간은 상담 가능 시간이 아닙니다.");
+        }
+    }
+
+    /** N수관: 평일·토 10:00, 17:00. 하이엔드: 평일 17:00·20:00, 토 10:00·16:00. (일요일은 호출 전에 차단) */
+    private Set<LocalTime> resolveConsultationAllowedTimes(Branch branch, DayOfWeek dow) {
+        boolean weekday =
+                dow != DayOfWeek.SATURDAY && dow != DayOfWeek.SUNDAY;
+        boolean saturday = dow == DayOfWeek.SATURDAY;
+
+        if (branch == Branch.N) {
+            if (weekday || saturday) {
+                return Set.of(LocalTime.of(10, 0), LocalTime.of(17, 0));
+            }
+            return Set.of();
+        }
+        if (branch == Branch.HI_END) {
+            if (weekday) {
+                return Set.of(LocalTime.of(17, 0), LocalTime.of(20, 0));
+            }
+            if (saturday) {
+                return Set.of(LocalTime.of(10, 0), LocalTime.of(16, 0));
+            }
+            return Set.of();
+        }
+        return Set.of();
     }
 
     /**
