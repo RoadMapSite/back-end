@@ -29,24 +29,37 @@ public class SmsService {
     }
 
     /**
-     * SMS 발송. 실패 시 로깅만 하고 예외를 던지지 않음 (비즈니스 로직 실패 방지).
+     * 기본 발신 번호({@code solapi.sender-number})로 SMS 발송.
      */
     public void send(String to, String text) {
+        send(to, text, senderNumber);
+    }
+
+    /**
+     * 지정 발신 번호로 SMS 발송. {@code from}이 비어 있으면 기본 발신 번호를 사용한다.
+     */
+    public void send(String to, String text, String from) {
         String normalizedTo = normalizePhoneNumber(to);
         if (normalizedTo.isBlank()) {
             log.warn("SMS 발송 스킵: 수신 번호가 비어있음");
             return;
         }
+        String fromNumber = (from != null && !from.isBlank()) ? normalizePhoneNumber(from) : senderNumber;
+        if (fromNumber == null || fromNumber.isBlank()) {
+            log.warn("SMS 발송 스킵: 발신 번호가 비어있음");
+            return;
+        }
         try {
             Message message = new Message();
-            message.setFrom(senderNumber);
+            message.setFrom(fromNumber);
             message.setTo(normalizedTo);
             message.setText(text);
             message.setSubject("[로드맵 독서실]");
             messageService.send(message);
-            log.info("SMS 발송 완료: to={}", normalizedTo);
+            log.info("SMS 발송 완료: from={}, to={}", fromNumber, normalizedTo);
         } catch (Exception e) {
-            log.error("SMS 발송 실패: to={}", normalizedTo, e);
+            log.error("SMS 발송 실패: from={}, to={}", fromNumber, normalizedTo, e);
+            throw new IllegalStateException("SMS 발송 실패", e);
         }
     }
 

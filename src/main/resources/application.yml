@@ -1,7 +1,12 @@
 solapi:
   api-key: ${SOLAPI_API_KEY}
   api-secret: ${SOLAPI_API_SECRET}
-  sender-number: ${SOLAPI_SENDER_NUMBER}
+  # 휴대폰 인증·지점 미분기 SMS 기본 발신번호 (N수관 = SOLAPI_SENDER_NUMBER_N)
+  sender-number: ${SOLAPI_SENDER_NUMBER_N}
+  sender:
+    number:
+      n: ${SOLAPI_SENDER_NUMBER_N}
+      highend: ${SOLAPI_SENDER_NUMBER_HIGHEND}
 
 # AWS S3 (실제 키·버킷은 프로필별 yml 또는 환경 변수로 주입)
 cloud:

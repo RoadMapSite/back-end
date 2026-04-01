@@ -38,7 +38,8 @@ public class AuthService {
     @Value("${solapi.api-secret}")
     private String apiSecret;
 
-    @Value("${solapi.sender-number}")
+    /** 휴대폰 인증 문자 발신번호 — N수관 번호(solapi.sender.number.n)와 동일 */
+    @Value("${solapi.sender.number.n}")
     private String senderNumber;
 
     private final PhoneVerificationRepository phoneVerificationRepository;

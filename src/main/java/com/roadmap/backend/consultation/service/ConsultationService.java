@@ -26,11 +26,15 @@ import java.util.Optional;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -43,8 +47,35 @@ public class ConsultationService {
     private final PhoneVerificationRepository phoneVerificationRepository;
     private final SmsService smsService;
 
+    @Value("${solapi.sender.number.n}")
+    private String solapiSenderNumberN;
+
+    @Value("${solapi.sender.number.highend}")
+    private String solapiSenderNumberHighend;
+
     @Transactional
     public ConsultationResponse registerConsultation(ConsultationRequest request, String token) {
+        requireConsultationBranchEnum(request);
+
+        if (request.getBranch() == Branch.HI_END) {
+            log.info(
+                    "Hi-end 상담 신청 처리 시작: date={}, time={}, name={}, school={}, grade={}, phone={}",
+                    request.getDate(),
+                    request.getTime(),
+                    request.getName(),
+                    request.getSchool(),
+                    request.getGrade(),
+                    request.getPhoneNumber());
+        } else if (request.getBranch() == Branch.N) {
+            log.info(
+                    "N수관 상담 신청 처리 시작: date={}, time={}, name={}, age={}, phone={}",
+                    request.getDate(),
+                    request.getTime(),
+                    request.getName(),
+                    request.getAge(),
+                    request.getPhoneNumber());
+        }
+
         // 로직 0: 상담 시간·날짜 검증 (30분 단위, 영업시간, 과거 시점 차단)
         validateConsultationDateTime(request.getDate(), request.getTime());
 
@@ -87,6 +118,8 @@ public class ConsultationService {
             throw new ConsultationException("해당 시간은 이미 예약이 완료되었습니다.");
         }
 
+        validateSolapiSenderConfiguredForBranch(request.getBranch());
+
         // 로직 4: 저장
         LocalDateTime now = LocalDateTime.now();
         Consultation.ConsultationBuilder builder = Consultation.builder()
@@ -99,20 +132,40 @@ public class ConsultationService {
 
         if (request.getBranch() == Branch.N) {
             builder.studentAge(request.getAge()).studentSchool(null).studentGrade(null);
+        } else if (request.getBranch() == Branch.HI_END) {
+            builder
+                    .studentAge(null)
+                    .studentSchool(request.getSchool())
+                    .studentGrade(request.getGrade());
         } else {
-            builder.studentAge(null).studentSchool(request.getSchool()).studentGrade(request.getGrade());
+            log.error("상담 저장 분기: 지원하지 않는 branch입니다. branch={}", request.getBranch());
+            throw new ConsultationException("지점은 N 또는 Hi-end만 입력 가능합니다.");
         }
 
         Consultation consultation = builder.build();
 
         Consultation saved = consultationRepository.save(consultation);
 
+        if (request.getBranch() == Branch.HI_END) {
+            log.info("Hi-end 상담 신청 DB 저장 완료: consultationId={}", saved.getConsultationId());
+        }
+
         String phoneForSms = request.getPhoneNumber();
         String smsMessage = buildConsultationSmsMessage(request);
+        String senderFrom =
+                request.getBranch().resolveSolapiSenderNumber(solapiSenderNumberN, solapiSenderNumberHighend);
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
             @Override
             public void afterCommit() {
-                smsService.send(phoneForSms, smsMessage);
+                try {
+                    smsService.send(phoneForSms, smsMessage, senderFrom);
+                } catch (RuntimeException e) {
+                    log.error(
+                            "상담 신청: 트랜잭션 커밋 후 SMS 발송 실패 (DB 저장은 이미 반영됨). consultationId={}",
+                            saved.getConsultationId(),
+                            e);
+                    throw e;
+                }
             }
         });
 
@@ -144,6 +197,33 @@ public class ConsultationService {
     }
 
     /**
+     * 요청의 branch가 Enum으로 확정된 N / HI_END 인지 검사한다. (문자열 비교 금지)
+     */
+    private void requireConsultationBranchEnum(ConsultationRequest request) {
+        Branch b = request.getBranch();
+        if (b == null) {
+            log.error("상담 신청: branch가 null입니다.");
+            throw new ConsultationException("지점(branch)은 필수입니다. N 또는 Hi-end를 입력해 주세요.");
+        }
+        if (b != Branch.N && b != Branch.HI_END) {
+            log.error("상담 신청: 알 수 없는 branch Enum 값입니다. branch={}", b);
+            throw new ConsultationException("지점은 N 또는 Hi-end만 입력 가능합니다.");
+        }
+    }
+
+    /** 해당 지점 SMS 발신번호가 비어 있으면 커밋 전에 실패시킨다 (사일런트 스킵 방지). */
+    private void validateSolapiSenderConfiguredForBranch(Branch branch) {
+        if (branch == Branch.N && !StringUtils.hasText(solapiSenderNumberN)) {
+            log.error("상담 신청: N수관 Solapi 발신번호(solapi.sender.number.n)가 비어 있습니다.");
+            throw new ConsultationException("시스템 설정 오류로 문자를 보낼 수 없습니다. 관리자에게 문의해 주세요.");
+        }
+        if (branch == Branch.HI_END && !StringUtils.hasText(solapiSenderNumberHighend)) {
+            log.error("상담 신청: Hi-end Solapi 발신번호(solapi.sender.number.highend)가 비어 있습니다.");
+            throw new ConsultationException("시스템 설정 오류로 문자를 보낼 수 없습니다. 관리자에게 문의해 주세요.");
+        }
+    }
+
+    /**
      * N: 나이 필수, Hi-end: 학교·학년 필수 검증.
      */
     private void validateConsultationAgeOrSchoolGrade(ConsultationRequest request) {
@@ -154,7 +234,7 @@ public class ConsultationService {
             if ((request.getSchool() != null && !request.getSchool().isBlank()) || request.getGrade() != null) {
                 throw new ConsultationException("N수관은 나이만 입력 가능합니다.");
             }
-        } else {
+        } else if (request.getBranch() == Branch.HI_END) {
             boolean hasSchoolGrade = (request.getSchool() != null && !request.getSchool().isBlank())
                     && request.getGrade() != null;
             if (!hasSchoolGrade) {
@@ -163,6 +243,9 @@ public class ConsultationService {
             if (request.getAge() != null) {
                 throw new ConsultationException("Hi-end는 학교·학년만 입력 가능합니다.");
             }
+        } else {
+            log.error("상담 검증 분기: 지원하지 않는 branch입니다. branch={}", request.getBranch());
+            throw new ConsultationException("지점은 N 또는 Hi-end만 입력 가능합니다.");
         }
     }
 

@@ -51,7 +51,8 @@ jobs:
             -DJWT_SECRET="${{ secrets.JWT_SECRET }}" \
             -DSOLAPI_API_KEY="${{ secrets.SOLAPI_API_KEY }}" \
             -DSOLAPI_API_SECRET="${{ secrets.SOLAPI_API_SECRET }}" \
-            -DSOLAPI_SENDER_NUMBER="${{ secrets.SOLAPI_SENDER_NUMBER }}" \
+            -DSOLAPI_SENDER_NUMBER_N="${{ secrets.SOLAPI_SENDER_NUMBER_N }}" \
+            -DSOLAPI_SENDER_NUMBER_HIGHEND="${{ secrets.SOLAPI_SENDER_NUMBER_HIGHEND }}" \
             -DAWS_REGION="${{ secrets.AWS_REGION }}" \
             -DAWS_S3_BUCKET="${{ secrets.AWS_S3_BUCKET }}" \
             -DAWS_ACCESS_KEY="${{ secrets.AWS_ACCESS_KEY }}" \

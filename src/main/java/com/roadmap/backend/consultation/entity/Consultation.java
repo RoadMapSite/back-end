@@ -43,7 +43,8 @@ public class Consultation {
     @Column(name = "student_name", nullable = false, length = 100)
     private String studentName;
 
-    @Column(name = "student_age")
+    /** N수관만 값이 있고, Hi-end는 미수집이므로 null 허용 */
+    @Column(name = "student_age", nullable = true)
     private Integer studentAge;
 
     @Column(name = "student_school", length = 100)
