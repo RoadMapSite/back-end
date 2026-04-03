@@ -134,9 +134,7 @@ public class WaitlistService {
         String seasonAndBranch = SmsMessageUtil.formatSeasonAndBranch(waitlist.getSeason(), waitlist.getBranch());
         return String.format(
                 "[로드맵 독서실]\n"
-                        + "%s 학생의 %s 등록 대기가 완료되었습니다.\n"
-                        + "추후 좌석 발생 시 다시 연락드리겠습니다.\n"
-                        + "감사합니다.",
+                        + "%s 학생의 %s 등록 예약이 완료되었습니다. 등록 가능 시점에 다시 안내 드리겠습니다. 감사합니다.",
                 waitlist.getStudentName(),
                 seasonAndBranch
         );
