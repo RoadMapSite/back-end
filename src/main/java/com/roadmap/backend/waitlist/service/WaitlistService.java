@@ -69,6 +69,7 @@ public class WaitlistService {
                 .branch(branchToSave)
                 .season(request.getSeason())
                 .studentName(request.getName())
+                .gender(request.getGender())
                 .phoneNumber(phoneNumber)
                 .isExisting(Boolean.TRUE.equals(request.getIsExisting()))
                 .status("WAITING")

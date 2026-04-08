@@ -1,14 +1,10 @@
 package com.roadmap.backend.waitlist.repository;
 
 import com.roadmap.backend.waitlist.entity.Waitlist;
-import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
-public interface WaitlistRepository extends JpaRepository<Waitlist, Long> {
+public interface WaitlistRepository extends JpaRepository<Waitlist, Long>, JpaSpecificationExecutor<Waitlist> {
 
     boolean existsByPhoneNumberAndSeason(String phoneNumber, String season);
-
-    List<Waitlist> findBySeasonOrderByIsExistingDescRegisteredAtAsc(String season);
-
-    List<Waitlist> findBySeasonAndBranchOrderByIsExistingDescRegisteredAtAsc(String season, String branch);
 }

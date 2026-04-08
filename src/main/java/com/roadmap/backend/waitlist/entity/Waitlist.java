@@ -1,6 +1,7 @@
 package com.roadmap.backend.waitlist.entity;
 
 import com.roadmap.backend.domain.Grade;
+import com.roadmap.backend.waitlist.domain.Gender;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -37,6 +38,10 @@ public class Waitlist {
 
     @Column(name = "student_name", nullable = false, length = 100)
     private String studentName;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 10)
+    private Gender gender;
 
     @Column(name = "student_age")
     private Integer studentAge;

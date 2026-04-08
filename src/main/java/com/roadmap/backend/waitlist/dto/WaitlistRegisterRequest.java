@@ -1,8 +1,10 @@
 package com.roadmap.backend.waitlist.dto;
 
 import com.roadmap.backend.domain.Grade;
+import com.roadmap.backend.waitlist.domain.Gender;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -31,6 +33,10 @@ public class WaitlistRegisterRequest {
     @NotBlank(message = "학생 이름은 필수입니다.")
     @Schema(description = "학생 이름", required = true, example = "홍길동")
     private String name;
+
+    @NotNull(message = "성별은 필수입니다.")
+    @Schema(description = "성별", required = true, example = "MALE", allowableValues = {"MALE", "FEMALE"})
+    private Gender gender;
 
     @Schema(description = "학생 나이 (SUMMER/WINTER·N수관 시 필수)", example = "15")
     private Integer age;

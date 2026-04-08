@@ -6,6 +6,7 @@ import com.roadmap.backend.admin.dto.WaitlistStatusUpdateRequest;
 import com.roadmap.backend.admin.dto.WaitlistStatusUpdateResponse;
 import com.roadmap.backend.admin.exception.AdminAuthException;
 import com.roadmap.backend.admin.service.AdminWaitlistService;
+import com.roadmap.backend.waitlist.domain.Gender;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
@@ -54,11 +55,13 @@ public class AdminWaitlistController {
             @Parameter(description = "시즌 (SUMMER, WINTER, SEMESTER_1, SEMESTER_2)", required = true)
             @RequestParam(name = "season", required = false) String season,
             @Parameter(description = "지점 (N 또는 Hi-end, 학기 시즌일 때 필수)")
-            @RequestParam(name = "branch", required = false) String branch) {
+            @RequestParam(name = "branch", required = false) String branch,
+            @Parameter(description = "성별 필터 (MALE, FEMALE — 생략 시 전체)")
+            @RequestParam(name = "gender", required = false) Gender gender) {
 
         String token = extractToken(authHeader);
         requireToken(token);
-        AdminWaitlistResponse response = adminWaitlistService.getWaitlistList(token, season, branch);
+        AdminWaitlistResponse response = adminWaitlistService.getWaitlistList(token, season, branch, gender);
         return ResponseEntity.ok(response);
     }
 

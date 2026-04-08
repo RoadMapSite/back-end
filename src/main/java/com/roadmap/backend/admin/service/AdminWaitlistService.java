@@ -11,6 +11,7 @@ import com.roadmap.backend.admin.sms.WaitlistStatusSmsTemplate;
 import com.roadmap.backend.consultation.entity.Branch;
 import com.roadmap.backend.sms.service.SmsService;
 import com.roadmap.backend.sms.util.SmsMessageUtil;
+import com.roadmap.backend.waitlist.domain.Gender;
 import com.roadmap.backend.waitlist.entity.Season;
 import com.roadmap.backend.waitlist.entity.Waitlist;
 import com.roadmap.backend.waitlist.repository.WaitlistRepository;
@@ -18,9 +19,12 @@ import com.roadmap.backend.waitlist.service.WaitlistService;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.security.SignatureException;
+import jakarta.persistence.criteria.Predicate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.IntStream;
+import org.springframework.data.jpa.domain.Specification;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -48,11 +52,11 @@ public class AdminWaitlistService {
     @Value("${solapi.sender.number.highend}")
     private String solapiSenderNumberHighend;
 
-    public AdminWaitlistResponse getWaitlistList(String token, String seasonParam, String branchParam) {
+    public AdminWaitlistResponse getWaitlistList(String token, String seasonParam, String branchParam, Gender gender) {
         validateAdminToken(token);
         validateSeasonAndBranch(seasonParam, branchParam);
 
-        List<Waitlist> waitlists = fetchWaitlists(seasonParam, branchParam);
+        List<Waitlist> waitlists = fetchWaitlists(seasonParam, branchParam, gender);
 
         List<WaitlistDetail> details = IntStream.range(0, waitlists.size())
                 .mapToObj(i -> {
@@ -63,6 +67,7 @@ public class AdminWaitlistService {
                             .branch(w.getBranch())
                             .season(w.getSeason())
                             .name(w.getStudentName())
+                            .gender(w.getGender())
                             .age(w.getStudentAge())
                             .school(w.getStudentSchool())
                             .grade(w.getStudentGrade())
@@ -183,15 +188,34 @@ public class AdminWaitlistService {
         }
     }
 
-    private List<Waitlist> fetchWaitlists(String seasonParam, String branchParam) {
-        Season season = Season.valueOf(seasonParam);
+    private List<Waitlist> fetchWaitlists(String seasonParam, String branchParam, Gender genderFilter) {
+        Specification<Waitlist> spec = waitlistListSpecification(seasonParam, branchParam, genderFilter);
+        return waitlistRepository.findAll(spec);
+    }
 
-        if (season == Season.SUMMER || season == Season.WINTER) {
-            return waitlistRepository.findBySeasonOrderByIsExistingDescRegisteredAtAsc(seasonParam);
-        }
+    /**
+     * 시즌·지점(학기) 조건 및 선택적 성별 필터.
+     * 정렬: isExisting DESC, registeredAt ASC (기존 재원생 우선, 동일 시 신청 순).
+     */
+    private Specification<Waitlist> waitlistListSpecification(String seasonParam, String branchParam, Gender genderFilter) {
+        return (root, query, cb) -> {
+            if (query != null) {
+                query.orderBy(cb.desc(root.get("isExisting")), cb.asc(root.get("registeredAt")));
+            }
+            List<Predicate> predicates = new ArrayList<>();
+            predicates.add(cb.equal(root.get("season"), seasonParam));
 
-        String branch = normalizeBranch(branchParam);
-        return waitlistRepository.findBySeasonAndBranchOrderByIsExistingDescRegisteredAtAsc(seasonParam, branch);
+            Season season = Season.valueOf(seasonParam);
+            if (season == Season.SUMMER || season == Season.WINTER) {
+                predicates.add(cb.isNull(root.get("branch")));
+            } else {
+                predicates.add(cb.equal(root.get("branch"), normalizeBranch(branchParam)));
+            }
+            if (genderFilter != null) {
+                predicates.add(cb.equal(root.get("gender"), genderFilter));
+            }
+            return cb.and(predicates.toArray(Predicate[]::new));
+        };
     }
 
     private String normalizeBranch(String branchParam) {
