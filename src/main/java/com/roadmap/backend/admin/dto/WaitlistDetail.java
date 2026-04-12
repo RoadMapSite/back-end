@@ -1,7 +1,7 @@
 package com.roadmap.backend.admin.dto;
 
 import com.roadmap.backend.domain.Grade;
-import com.roadmap.backend.waitlist.domain.Gender;
+import com.roadmap.backend.waitlist.entity.Gender;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;

@@ -1,12 +1,14 @@
 package com.roadmap.backend.admin.controller;
 
+import com.roadmap.backend.admin.dto.AdminWaitlistCreateRequest;
 import com.roadmap.backend.admin.dto.AdminWaitlistResponse;
 import com.roadmap.backend.admin.dto.WaitlistDeleteResponse;
 import com.roadmap.backend.admin.dto.WaitlistStatusUpdateRequest;
 import com.roadmap.backend.admin.dto.WaitlistStatusUpdateResponse;
 import com.roadmap.backend.admin.exception.AdminAuthException;
 import com.roadmap.backend.admin.service.AdminWaitlistService;
-import com.roadmap.backend.waitlist.domain.Gender;
+import com.roadmap.backend.waitlist.entity.Gender;
+import com.roadmap.backend.waitlist.dto.WaitlistRegisterResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
@@ -19,6 +21,7 @@ import org.springframework.http.ResponseEntity;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -36,6 +39,26 @@ public class AdminWaitlistController {
     private static final String BEARER_PREFIX = "Bearer ";
 
     private final AdminWaitlistService adminWaitlistService;
+
+    @PostMapping
+    @Operation(
+            summary = "관리자 대기열 직접 등록",
+            description = """
+                    관리자 전용. 인증·SMS 없이 대기열 행만 저장합니다.
+                    시즌·지점에 따른 나이/학교·학년 조건은 사용자 대기 등록 API와 동일합니다.
+                    """,
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    public ResponseEntity<WaitlistRegisterResponse> createWaitlist(
+            @Parameter(hidden = true)
+            @RequestHeader(value = "Authorization", required = false) String authHeader,
+            @Valid @RequestBody AdminWaitlistCreateRequest request) {
+
+        String token = extractToken(authHeader);
+        requireToken(token);
+        WaitlistRegisterResponse response = adminWaitlistService.createWaitlist(token, request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
 
     @GetMapping
     @Operation(

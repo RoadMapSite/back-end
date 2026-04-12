@@ -1,7 +1,6 @@
 package com.roadmap.backend.waitlist.entity;
 
 import com.roadmap.backend.domain.Grade;
-import com.roadmap.backend.waitlist.domain.Gender;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;

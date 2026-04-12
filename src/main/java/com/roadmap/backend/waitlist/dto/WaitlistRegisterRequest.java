@@ -1,7 +1,7 @@
 package com.roadmap.backend.waitlist.dto;
 
 import com.roadmap.backend.domain.Grade;
-import com.roadmap.backend.waitlist.domain.Gender;
+import com.roadmap.backend.waitlist.entity.Gender;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;

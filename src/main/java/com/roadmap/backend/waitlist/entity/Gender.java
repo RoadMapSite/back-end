@@ -1,4 +1,4 @@
-package com.roadmap.backend.waitlist.domain;
+package com.roadmap.backend.waitlist.entity;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;

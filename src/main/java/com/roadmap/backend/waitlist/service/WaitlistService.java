@@ -1,8 +1,10 @@
 package com.roadmap.backend.waitlist.service;
 
+import com.roadmap.backend.domain.Grade;
 import com.roadmap.backend.auth.entity.PhoneVerification;
 import com.roadmap.backend.auth.repository.PhoneVerificationRepository;
 import com.roadmap.backend.consultation.entity.Branch;
+import com.roadmap.backend.admin.dto.AdminWaitlistCreateRequest;
 import com.roadmap.backend.waitlist.dto.WaitlistRegisterRequest;
 import com.roadmap.backend.waitlist.dto.WaitlistRegisterResponse;
 import com.roadmap.backend.waitlist.entity.Season;
@@ -61,7 +63,12 @@ public class WaitlistService {
         String branchToSave = resolveBranch(request.getSeason(), request.getBranch());
 
         // 나이 vs 학교·학년 검증
-        validateAgeOrSchoolGrade(request.getSeason(), branchToSave, request);
+        validateAgeOrSchoolGrade(
+                request.getSeason(),
+                branchToSave,
+                request.getAge(),
+                request.getSchool(),
+                request.getGrade());
 
         // DB 저장
         LocalDateTime now = LocalDateTime.now();
@@ -107,6 +114,78 @@ public class WaitlistService {
                 .waitlistId(saved.getWaitlistId())
                 .registeredAt(saved.getRegisteredAt())
                 .build();
+    }
+
+    /**
+     * 관리자 직접 등록: SMS·알림톡 없이 DB 저장만 수행.
+     */
+    @Transactional
+    public WaitlistRegisterResponse registerWaitlistByAdmin(AdminWaitlistCreateRequest request) {
+        String phoneNumber = normalizePhoneDigits(request.getPhoneNumber());
+        if (phoneNumber.isBlank()) {
+            throw new IllegalArgumentException("휴대폰 번호는 필수입니다.");
+        }
+
+        if (waitlistRepository.existsByPhoneNumberAndSeason(phoneNumber, request.getSeason())) {
+            throw new IllegalArgumentException("이미 해당 시즌에 대기 등록이 완료된 연락처입니다.");
+        }
+
+        String branchToSave;
+        try {
+            branchToSave = resolveBranch(request.getSeason(), request.getBranch());
+        } catch (WaitlistException e) {
+            throw new IllegalArgumentException(e.getMessage());
+        }
+
+        try {
+            validateAgeOrSchoolGrade(
+                    request.getSeason(),
+                    branchToSave,
+                    request.getAge(),
+                    request.getSchool(),
+                    request.getGrade());
+        } catch (WaitlistException e) {
+            throw new IllegalArgumentException(e.getMessage());
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+        Waitlist.WaitlistBuilder builder = Waitlist.builder()
+                .branch(branchToSave)
+                .season(request.getSeason())
+                .studentName(request.getName())
+                .gender(request.getGender())
+                .phoneNumber(phoneNumber)
+                .isExisting(Boolean.TRUE.equals(request.getIsExisting()))
+                .status("WAITING")
+                .registeredAt(now)
+                .updatedAt(now);
+
+        Season seasonEnum = Season.valueOf(request.getSeason());
+        if (seasonEnum == Season.SUMMER || seasonEnum == Season.WINTER) {
+            builder.studentAge(request.getAge())
+                    .studentSchool(request.getSchool())
+                    .studentGrade(request.getGrade());
+        } else if ("N".equals(branchToSave)) {
+            builder.studentAge(request.getAge()).studentSchool(null).studentGrade(null);
+        } else {
+            builder.studentAge(null).studentSchool(request.getSchool()).studentGrade(request.getGrade());
+        }
+
+        Waitlist saved = waitlistRepository.save(builder.build());
+
+        return WaitlistRegisterResponse.builder()
+                .success(true)
+                .message("대기 등록이 완료되었습니다.")
+                .waitlistId(saved.getWaitlistId())
+                .registeredAt(saved.getRegisteredAt())
+                .build();
+    }
+
+    private static String normalizePhoneDigits(String phoneNumber) {
+        if (phoneNumber == null) {
+            return "";
+        }
+        return phoneNumber.replaceAll("[^0-9]", "");
     }
 
     /**
@@ -200,14 +279,13 @@ public class WaitlistService {
     /**
      * 시즌·branch에 따른 나이·학교·학년 검증.
      * - SUMMER, WINTER: 나이, 학교, 학년 모두 필수
-     * - SEMESTER + N: 나이 필수
-     * - SEMESTER + Hi-end: 학교·학년 필수
+     * - SEMESTER + N: 나이 필수, 학교·학년은 없어야 함
+     * - SEMESTER + Hi-end: 학교·학년 필수, 나이는 없어야 함
      */
-    private void validateAgeOrSchoolGrade(String season, String branch, WaitlistRegisterRequest request) {
+    private void validateAgeOrSchoolGrade(String season, String branch, Integer age, String school, Grade grade) {
         Season s = Season.valueOf(season);
-        boolean hasAge = request.getAge() != null;
-        boolean hasSchoolGrade = (request.getSchool() != null && !request.getSchool().isBlank())
-                && request.getGrade() != null;
+        boolean hasAge = age != null;
+        boolean hasSchoolGrade = (school != null && !school.isBlank()) && grade != null;
 
         if (s == Season.SUMMER || s == Season.WINTER) {
             if (!hasAge || !hasSchoolGrade) {
@@ -216,7 +294,6 @@ public class WaitlistService {
             return;
         }
 
-        // SEMESTER_1, SEMESTER_2
         boolean isN = "N".equals(branch);
         if (isN) {
             if (!hasAge) {
@@ -226,7 +303,6 @@ public class WaitlistService {
                 throw new WaitlistException("N수관은 나이만 입력 가능합니다.", HttpStatus.BAD_REQUEST);
             }
         } else {
-            // Hi-end
             if (!hasSchoolGrade) {
                 throw new WaitlistException("Hi-end는 학교와 학년을 필수로 입력해주세요.", HttpStatus.BAD_REQUEST);
             }

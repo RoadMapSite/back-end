@@ -1,6 +1,7 @@
 package com.roadmap.backend.admin.service;
 
 import com.roadmap.backend.admin.config.JwtProvider;
+import com.roadmap.backend.admin.dto.AdminWaitlistCreateRequest;
 import com.roadmap.backend.admin.dto.AdminWaitlistResponse;
 import com.roadmap.backend.admin.dto.WaitlistDeleteResponse;
 import com.roadmap.backend.admin.dto.WaitlistDetail;
@@ -11,7 +12,8 @@ import com.roadmap.backend.admin.sms.WaitlistStatusSmsTemplate;
 import com.roadmap.backend.consultation.entity.Branch;
 import com.roadmap.backend.sms.service.SmsService;
 import com.roadmap.backend.sms.util.SmsMessageUtil;
-import com.roadmap.backend.waitlist.domain.Gender;
+import com.roadmap.backend.waitlist.entity.Gender;
+import com.roadmap.backend.waitlist.dto.WaitlistRegisterResponse;
 import com.roadmap.backend.waitlist.entity.Season;
 import com.roadmap.backend.waitlist.entity.Waitlist;
 import com.roadmap.backend.waitlist.repository.WaitlistRepository;
@@ -51,6 +53,12 @@ public class AdminWaitlistService {
 
     @Value("${solapi.sender.number.highend}")
     private String solapiSenderNumberHighend;
+
+    @Transactional
+    public WaitlistRegisterResponse createWaitlist(String token, AdminWaitlistCreateRequest request) {
+        validateAdminToken(token);
+        return waitlistService.registerWaitlistByAdmin(request);
+    }
 
     public AdminWaitlistResponse getWaitlistList(String token, String seasonParam, String branchParam, Gender gender) {
         validateAdminToken(token);
