@@ -203,12 +203,15 @@ public class AdminWaitlistService {
 
     /**
      * 시즌·지점(학기) 조건 및 선택적 성별 필터.
-     * 정렬: isExisting DESC, registeredAt ASC (기존 재원생 우선, 동일 시 신청 순).
+     * 정렬: isExisting DESC, registeredAt ASC, waitlistId ASC (동순위 시 ID 순).
      */
     private Specification<Waitlist> waitlistListSpecification(String seasonParam, String branchParam, Gender genderFilter) {
         return (root, query, cb) -> {
             if (query != null) {
-                query.orderBy(cb.desc(root.get("isExisting")), cb.asc(root.get("registeredAt")));
+                query.orderBy(
+                        cb.desc(root.get("isExisting")),
+                        cb.asc(root.get("registeredAt")),
+                        cb.asc(root.get("waitlistId")));
             }
             List<Predicate> predicates = new ArrayList<>();
             predicates.add(cb.equal(root.get("season"), seasonParam));

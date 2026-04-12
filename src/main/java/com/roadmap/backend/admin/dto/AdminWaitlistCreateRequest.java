@@ -5,6 +5,7 @@ import com.roadmap.backend.waitlist.entity.Gender;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import java.time.LocalDate;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -48,4 +49,8 @@ public class AdminWaitlistCreateRequest {
 
     @Schema(description = "학년 (Hi-end 또는 캠프 시 필수 조건)", example = "2학년")
     private Grade grade;
+
+    @NotNull(message = "등록일은 필수입니다.")
+    @Schema(description = "대기 등록일 (해당 일의 00:00:00으로 저장)", required = true, example = "2025-03-15", type = "string", format = "date")
+    private LocalDate registeredAt;
 }

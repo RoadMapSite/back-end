@@ -148,7 +148,7 @@ public class WaitlistService {
             throw new IllegalArgumentException(e.getMessage());
         }
 
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime registeredAtTime = request.getRegisteredAt().atStartOfDay();
         Waitlist.WaitlistBuilder builder = Waitlist.builder()
                 .branch(branchToSave)
                 .season(request.getSeason())
@@ -157,8 +157,8 @@ public class WaitlistService {
                 .phoneNumber(phoneNumber)
                 .isExisting(Boolean.TRUE.equals(request.getIsExisting()))
                 .status("WAITING")
-                .registeredAt(now)
-                .updatedAt(now);
+                .registeredAt(registeredAtTime)
+                .updatedAt(registeredAtTime);
 
         Season seasonEnum = Season.valueOf(request.getSeason());
         if (seasonEnum == Season.SUMMER || seasonEnum == Season.WINTER) {
