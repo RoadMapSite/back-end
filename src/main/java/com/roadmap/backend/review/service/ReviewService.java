@@ -17,7 +17,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -29,40 +28,26 @@ public class ReviewService {
     private final ReviewRepository reviewRepository;
     private final PhoneVerificationRepository phoneVerificationRepository;
 
-    @Transactional
-    public ReviewsResponse getReviews(Integer page) {
-        int pageNumber = (page == null || page < 1) ? 0 : page - 1;
+    /**
+     * 우수 후기: 승인 + isTop=true, 최신순, 페이징 없음.
+     * 목록용: 작성자명 마스킹, 조회수 증가 없음.
+     */
+    public List<ReviewResponse> getTopApprovedReviews() {
+        List<Review> topReviews = reviewRepository.findByStatusAndIsTopTrueOrderByCreatedAtDesc("APPROVED");
+        return topReviews.stream().map(this::toReviewResponseForPublicList).toList();
+    }
 
-        // 한 페이지에 가져올 후기 개수
-        int pageSize = 10;
-
-        Pageable pageable = PageRequest.of(pageNumber, pageSize, Sort.by(Sort.Direction.DESC, "createdAt"));
-
-        List<Review> topReviews = reviewRepository
-                .findByStatusAndIsTopTrueOrderByCreatedAtDesc("APPROVED");
-
-        Page<Review> reviewPage = reviewRepository
-                .findByStatusAndIsTopFalse("APPROVED", pageable);
-
-        // DTO 변환
-        List<ReviewSummary> topDtos = topReviews.stream()
-                .map(this::toReviewSummary)
-                .toList();
-
-        List<ReviewSummary> normalDtos = reviewPage.getContent().stream()
-                .map(this::toReviewSummary)
-                .toList();
-
-        // 고정글 + 일반글 합치기
-        List<ReviewSummary> merged = new ArrayList<>();
-        merged.addAll(topDtos);
-        merged.addAll(normalDtos);
-
-        return ReviewsResponse.builder()
-                .currentPage(reviewPage.getNumber() + 1)
-                .totalPages(reviewPage.getTotalPages())
-                .reviews(merged)
-                .build();
+    /**
+     * 일반 후기: 승인 + isTop=false만, 항상 작성일 최신순.
+     * totalElements는 순수 일반 후기 건수만 포함(Page 전체 메타).
+     */
+    public Page<ReviewResponse> getApprovedRegularReviews(Pageable pageable) {
+        Pageable sorted = PageRequest.of(
+                pageable.getPageNumber(),
+                pageable.getPageSize(),
+                Sort.by(Sort.Direction.DESC, "createdAt"));
+        Page<Review> page = reviewRepository.findApprovedNonTop("APPROVED", sorted);
+        return page.map(this::toReviewResponseForPublicList);
     }
 
     @Transactional
@@ -73,24 +58,9 @@ public class ReviewService {
             throw new ReviewException("존재하지 않는 후기입니다.", HttpStatus.NOT_FOUND);
         }
 
-        // 조회수 증가
         review.incrementViewCount();
 
-        List<String> imageUrls = Optional.ofNullable(review.getImages())
-                .orElse(List.of())
-                .stream()
-                .map(ReviewImage :: getImageUrl)
-                .toList();
-
-        return ReviewResponse.builder()
-                .reviewId(review.getReviewId())
-                .title(review.getTitle())
-                .content(review.getContent())
-                .authorName(review.getAuthorName())
-                .imageUrls(imageUrls)
-                .viewCount(review.getViewCount())
-                .createdAt(review.getCreatedAt())
-                .build();
+        return toReviewResponseDetail(review);
     }
 
     @Transactional
@@ -190,14 +160,45 @@ public class ReviewService {
         return verification;
     }
 
-    private ReviewSummary toReviewSummary(Review review) {
-        return ReviewSummary.builder()
+    /**
+     * 목록·우수 후기 조회용: 마스킹, 조회수 미증가.
+     */
+    private ReviewResponse toReviewResponseForPublicList(Review review) {
+        List<String> imageUrls = Optional.ofNullable(review.getImages())
+                .orElse(List.of())
+                .stream()
+                .map(ReviewImage::getImageUrl)
+                .toList();
+
+        return ReviewResponse.builder()
                 .reviewId(review.getReviewId())
                 .title(review.getTitle())
+                .content(review.getContent())
                 .authorName(maskName(review.getAuthorName()))
+                .imageUrls(imageUrls)
                 .viewCount(review.getViewCount())
                 .createdAt(review.getCreatedAt())
-                .isTop(review.getIsTop())
+                .build();
+    }
+
+    /**
+     * 상세 조회용: 작성자명 원문, 조회수는 호출 전 증가된 값 반영.
+     */
+    private ReviewResponse toReviewResponseDetail(Review review) {
+        List<String> imageUrls = Optional.ofNullable(review.getImages())
+                .orElse(List.of())
+                .stream()
+                .map(ReviewImage::getImageUrl)
+                .toList();
+
+        return ReviewResponse.builder()
+                .reviewId(review.getReviewId())
+                .title(review.getTitle())
+                .content(review.getContent())
+                .authorName(review.getAuthorName())
+                .imageUrls(imageUrls)
+                .viewCount(review.getViewCount())
+                .createdAt(review.getCreatedAt())
                 .build();
     }
 
